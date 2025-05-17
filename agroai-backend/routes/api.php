@@ -20,5 +20,28 @@ Route::post('login',    [AuthController::class, 'login']);
 */
 
 Route::middleware('auth:sanctum')->group(function () {
+
+    // users resource (only index & show)
+    Route::apiResource('users', UserController::class)
+         ->only(['index', 'show']);
+
+    // chat CRUD
+    Route::apiResource('chats', ChatController::class)
+         ->only(['index','show','store','update','destroy']);
+
+     // message routes 
+    // List messages in a chat
+    Route::get('chats/{chat}/messages', [MessageController::class, 'index']);
+
+    // Create a new message in a chat
+    Route::post('chats/{chat}/messages', [MessageController::class, 'store']);
+
+    // Show a single message (with its response)
+    Route::get('messages/{message}', [MessageController::class, 'show']);
+
+    // response route
+    // Show the AI response for a given message
+    Route::get('messages/{message}/response', [ResponseController::class, 'show']);
+
     Route::post('logout', [AuthController::class, 'logout']);
 });
