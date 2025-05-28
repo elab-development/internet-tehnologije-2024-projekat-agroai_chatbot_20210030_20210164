@@ -13,15 +13,15 @@ return new class extends Migration
 
         // requires doctrine/dbal for change()
         Schema::table('chats', function (Blueprint $table) {
-            $table->string('title', 1000)->nullable()->change();
+            $table->text('title', 10000)->nullable()->change();
         });
 
         Schema::table('messages', function (Blueprint $table) {
-            $table->string('content', 1000)->change();
+            $table->text('content', 10000)->change();
         });
 
         Schema::table('responses', function (Blueprint $table) {
-            $table->string('content', 1000)->change();
+            $table->text('content', 10000)->change();
         });
 
         // Re-enable FKs
@@ -33,13 +33,13 @@ return new class extends Migration
         Schema::disableForeignKeyConstraints();
 
         Schema::table('responses', function (Blueprint $table) {
-            $table->string('content', 500)->change();
+            $table->text('content', 500)->change();
         });
         Schema::table('messages', function (Blueprint $table) {
-            $table->string('content', 500)->change();
+            $table->text('content', 500)->change();
         });
         Schema::table('chats', function (Blueprint $table) {
-            $table->string('title', 500)->nullable()->change();
+            $table->text('title', 500)->nullable()->change();
         });
 
         Schema::enableForeignKeyConstraints();

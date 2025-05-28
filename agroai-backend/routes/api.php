@@ -2,6 +2,10 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\UserController;
+use App\Http\Controllers\MessageController;
+use App\Http\Controllers\ResponseController;
+use App\Http\Controllers\ChatController;
 
 /*
 |--------------------------------------------------------------------------
@@ -23,7 +27,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // users resource (only index & show)
     Route::apiResource('users', UserController::class)
-         ->only(['index', 'show']);
+         ->only(['index', 'show', 'update']);
 
     // chat CRUD
     Route::apiResource('chats', ChatController::class)

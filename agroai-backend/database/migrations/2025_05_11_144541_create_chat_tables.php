@@ -11,21 +11,21 @@ return new class extends Migration
         Schema::create('chats', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('user_id');
-            $table->string('title', 500)->nullable();
+            $table->text('title', 500)->nullable();
             $table->timestamps();
         });
 
         Schema::create('messages', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('chat_id');
-            $table->string('content', 500);
+            $table->text('content', 500);
             $table->timestamps();
         });
 
         Schema::create('responses', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('message_id');
-            $table->string('content', 500);
+            $table->text('content', 500);
             $table->timestamps();
         });
     }

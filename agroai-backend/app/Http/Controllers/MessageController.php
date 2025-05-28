@@ -62,49 +62,74 @@ class MessageController extends Controller
 
     /**
      * Create a new message in a chat, and immediately
-     * call DeepSeek-R1 to get the AI response.
+     * call the GitHub AI Inference endpoint (OpenAI GPT-4.1) to get the AI response.
      */
     public function store(Request $request, Chat $chat)
     {
         $user = Auth::user();
         if ($user->role !== 'regular') {
-            return response()->json(
-                ['message' => 'Forbidden. Only regular users can create messages.'],
-                403
-            );
+            return response()->json(['message' => 'Forbidden. Only regular users can create messages.'], 403);
         }
         if ($chat->user_id !== $user->id) {
-            return response()->json(
-                ['message' => 'Forbidden. You do not own this chat.'],
-                403
-            );
+            return response()->json(['message' => 'Forbidden. You do not own this chat.'], 403);
         }
 
+        // 1) Validate incoming content
         $validated = $request->validate([
             'content' => 'required|string|max:1000',
         ]);
 
+        // 2) Persist the user's message
         $message = $chat->messages()->create([
             'content' => $validated['content'],
         ]);
 
-        // call DeepSeek-R1
-        $apiResponse = Http::withHeaders([
-                'Authorization' => 'Bearer ' . env('DEEPSEEK_API_KEY'),
-            ])->post('https://api.deepseek.com/v1/reasoner', [
-                'model'  => 'deepseek-r1',
-                'prompt' => $validated['content'],
+        // 3) Call GitHub AI Inference (GPT-4.1) via the models.github.ai router
+        $endpoint = 'https://models.github.ai/inference/chat/completions';
+        $response = Http::withToken(env('GITHUB_TOKEN'))
+            ->acceptJson()
+            ->post($endpoint, [
+                'model'       => 'openai/gpt-4.1',
+                'messages'    => [
+                    [
+                        'role'    => 'system',
+                        'content' => 'You are an expert in agriculture, providing clear, actionable advice.',
+                    ],
+                    [
+                        'role'    => 'user',
+                        'content' => $validated['content'],
+                    ],
+                ],
+                'temperature' => 1.0,
+                'top_p'       => 1.0,
+                'stream'      => false,
             ]);
 
-        $botContent = data_get($apiResponse->json(), 'choices.0.message.content', '');
+        // 4) Handle errors or extract the assistant’s reply
+        if ($response->failed()) {
+            \Log::error('GitHub AI Inference error', [
+                'status' => $response->status(),
+                'body'   => $response->body(),
+            ]);
+            $botContent = 'The AI service is unavailable. Please try again later.';
+        } else {
+            $json       = $response->json();
+            $botContent = data_get($json, 'choices.0.message.content', '');
+            if (! $botContent) {
+                $botContent = 'Sorry, I couldn’t generate a response right now.';
+            }
+        }
 
+        // 5) Persist the AI response
         $message->response()->create([
             'content' => $botContent,
         ]);
 
+        // 6) Return the combined resource
         $message->load('response');
         return (new MessageResource($message))
-               ->response()
-               ->setStatusCode(201);
+            ->response()
+            ->setStatusCode(201);
     }
+
 }
