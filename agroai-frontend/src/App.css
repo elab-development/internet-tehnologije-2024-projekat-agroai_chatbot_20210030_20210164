@@ -1,38 +1,200 @@
-.App {
+/* Import Audiowide for headings */
+@import url('https://fonts.googleapis.com/css2?family=Audiowide&display=swap');
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body,
+#root,
+.auth-page {
+  height: 100vh;
+  font-family: Arial, sans-serif;
+}
+
+.auth-page {
+  display: flex;
+  background-color: rgb(1, 41, 51);
+}
+
+/* ===== SLIDER (left side) ===== */
+.auth-left {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+}
+.slide {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background-size: cover;
+  background-position: center;
+  opacity: 0;
+  transition: opacity 0.8s ease-in-out;
+}
+.slide.active {
+  opacity: 1;
+}
+
+/* ===== SLIDER NAV AS HORIZONTAL LINES ===== */
+.line-container {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 8px;
+  padding: 4px 8px;
+  background: rgb(1, 41, 51);
+  border: 2px solid rgba(1, 41, 51, 0.8);
+  border-radius: 4px;
+}
+.line {
+  width: 24px;
+  height: 3px;
+  background: rgba(140,201,64,0.5);
+  transition: background 0.3s, width 0.3s;
+  cursor: pointer;
+  border-radius: 2px;
+}
+.line.active {
+  background: rgb(140,201,64);
+  width: 32px;
+}
+
+/* ===== AUTH CARD (right side) ===== */
+.auth-right {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.auth-container {
+  position: relative; /* for corner animations */
+  background: rgba(255,255,255,0.05);
+  padding: 50px;
+  border-radius: 8px;
+  width: 95%;
+  max-width: 520px;
   text-align: center;
 }
 
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
+.logo {
+  width: 110px;
+  margin: 0 auto 20px;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
+h2 {
+  font-family: 'Audiowide', monospace;
+  color: rgb(140,201,64);
+  margin-bottom: 20px;
 }
 
-.App-header {
-  background-color: #282c34;
-  min-height: 100vh;
+.toggle-buttons {
+  display: flex;
+  margin-bottom: 30px;
+}
+.toggle-buttons button {
+  flex: 1;
+  padding: 12px;
+  border: 1px solid rgb(140,201,64);
+  background: transparent;
+  color: rgb(140,201,64);
+  cursor: pointer;
+  font-size: 16px;
+}
+.toggle-buttons button:first-child { border-right: none; border-top-left-radius:4px; border-bottom-left-radius:4px; }
+.toggle-buttons button:last-child  { border-top-right-radius:4px; border-bottom-right-radius:4px; }
+.toggle-buttons button.active     { background:rgb(140,201,64); color:rgb(1,41,51); }
+
+form {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: white;
 }
 
-.App-link {
-  color: #61dafb;
+/* Two-column register rows */
+.form-row {
+  display: flex;
+  gap: 20px;
+  margin-bottom: 15px;
+}
+.form-row > .input-group { flex:1; min-width:0; }
+
+/* Input + icon */
+.input-group {
+  position: relative;
+  margin-bottom: 15px;
+}
+.input-group .icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: rgb(140,201,64);
+  font-size: 18px;
+  pointer-events: none;
+}
+.input-group input {
+  width: 100%;
+  padding: 12px 12px 12px 40px;
+  border: 1px solid rgb(140,201,64);
+  border-radius: 4px;
+  background: transparent;
+  color: #fff;
+  font-size: 16px;
+}
+.input-group input::placeholder {
+  color: rgba(140,201,64,0.7);
 }
 
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+/* Upload button */
+.upload-btn {
+  padding: 10px;
+  border: 1px solid rgb(140,201,64);
+  border-radius: 4px;
+  background: transparent;
+  color: rgb(140,201,64);
+  cursor: pointer;
+  font-size: 14px;
+  margin-bottom: 15px;
+}
+
+/* Submit */
+button[type="submit"] {
+  padding: 14px;
+  border: none;
+  background: rgb(140,201,64);
+  color: rgb(1,41,51);
+  font-size: 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-top: 10px;
+}
+button[type="submit"]:hover { opacity:0.9; }
+
+.error { color:#ff4d4f; margin-bottom:15px; }
+
+@media (max-width:600px) {
+  .form-row { flex-direction:column; gap:10px; }
+}
+
+/* one full-width Lottie at top, flipped */
+.top-leafs {
+  position: absolute;
+  top: 35px;              /* negative half of its height to hang over */
+  left: 0;
+  right: 0;
+  height: 120px;           /* adjust to your animation’s height */
+  pointer-events: none;
+  z-index: 0;              /* behind the form content */
+}
+
+/* make sure Lottie itself fills the box */
+.top-leafs > div,
+.top-leafs svg {
+  width: 100% !important;
+  height: 150% !important;
 }
