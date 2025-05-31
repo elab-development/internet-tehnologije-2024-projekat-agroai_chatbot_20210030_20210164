@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-import { FaUser, FaEnvelope, FaLock } from 'react-icons/fa';
+import { FaUser, FaEnvelope, FaLock, FaImage  } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import { FileUploaderRegular } from '@uploadcare/react-uploader';
 import '@uploadcare/react-uploader/core.css';
@@ -207,20 +207,57 @@ export default function AuthPage() {
 
             {/* REGISTER: avatar */}
             {mode === 'register' && (
-              <div style={{ margin: '20px 0', textAlign: 'center' }}>
-                <FileUploaderRegular
-                  pubkey={process.env.REACT_APP_UPLOADCARE_PUBLIC_KEY}
-                  sourceList="local, camera, facebook, gdrive"
-                  classNameUploader="uc-light"
-                  onChange={fileInfo => {
-                    if (fileInfo?.cdnUrl) {
-                      setForm(f => ({ ...f, image_url: fileInfo.cdnUrl }));
-                    }
-                  }}
-                />
+              <div className="upload-wrapper">
+                {/*
+                  1) The “Uploadcare” component is wrapped in a fully covering <div className="upload-overlay">.
+                    Because of our CSS, this overlay is invisible (opacity:0) but still catches all clicks.
+                */}
+                <div className="upload-overlay">
+                  <FileUploaderRegular
+                    pubkey={process.env.REACT_APP_UPLOADCARE_PUBLIC_KEY}
+                    sourceList="local, camera, facebook, gdrive"
+                    /* 
+                      We don’t need extra classes here—the .upload-overlay container ensures it fills 100%. 
+                      If you want to be 100% safe, you can force its built‐in <button> to be 100% width via 
+                      a little inline style, but typically Uploadcare’s own button will expand to fill its parent.
+                    */
+                    onChange={fileInfo => {
+                      if (fileInfo?.cdnUrl) {
+                        setForm(f => ({ ...f, image_url: fileInfo.cdnUrl }));
+                      }
+                    }}
+                    /* Optionally force 100% width by passing style: */
+                    style={{ width: '100%', height: '100%' }}
+                  />
+                </div>
+
+                {/*
+                  2) Our “cover” button sits directly underneath (z-index:1). 
+                    Visually, the user sees this. Clicking anywhere here triggers the Uploadcare overlay above.
+                */}
+                <div className="upload-cover">
+                  <FaImage />
+                  Upload an avatar image
+                </div>
+
+                {/*
+                  3) (Optional) Show a confirmation/link once the image_url is set:
+                */}
+                {form.image_url && (
+                  <p style={{ marginTop: '8px', color: '#ccc', fontSize: '14px' }}>
+                    ✓ Uploaded:{' '}
+                    <a
+                      href={form.image_url}
+                      target="_blank"
+                      rel="noreferrer"
+                      style={{ color: 'rgb(140,201,64)', textDecoration: 'underline' }}
+                    >
+                      Preview
+                    </a>
+                  </p>
+                )}
               </div>
             )}
-
             <button type="submit">
               {mode === 'login' ? 'Login' : 'Create account'}
             </button>

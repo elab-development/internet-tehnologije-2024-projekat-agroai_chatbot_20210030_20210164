@@ -23,7 +23,7 @@ export default function Home() {
 
           <button
             className="get-started-btn"
-            onClick={() => navigate('/register')}
+            onClick={() => navigate('/chat')}
           >
             Get Started
           </button>
