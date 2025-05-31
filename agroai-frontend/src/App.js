@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import AuthPage from './pages/AuthPage';
+import Home from './pages/Home';
 import './App.css';
 
 function App() {
@@ -12,10 +13,8 @@ function App() {
           element={!token ? <AuthPage /> : <Navigate to="/chats" replace />}
         />
         {/* Dodajte svoje zaštićene rute ovde, npr. /chats */}
-        <Route
-          path="*"
-          element={<Navigate to="/auth" replace />}
-        />
+        <Route path="/" element={<AuthPage/>} />
+        <Route path="/home" element={token ? <Home/> : <Navigate to="/auth" replace />} />
       </Routes>
     </BrowserRouter>
   );

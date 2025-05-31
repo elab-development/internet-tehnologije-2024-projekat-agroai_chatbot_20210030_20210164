@@ -198,3 +198,127 @@ button[type="submit"]:hover { opacity:0.9; }
   width: 100% !important;
   height: 150% !important;
 }
+/* Make sure Audiowide is imported somewhere globally (e.g. in App.css) */
+@import url('https://fonts.googleapis.com/css2?family=Audiowide&display=swap');
+
+/* ---- HERO SECTION (full-screen, no nav) ---- */
+.hero {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 80px 5%;
+  min-height: 100vh;
+  background: rgb(1, 41, 51);
+}
+
+.hero-left {
+  flex: 1;
+  max-width: 50%;
+}
+
+.discount-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(140, 201, 64, 0.1);
+  color: rgb(140, 201, 64);
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 14px;
+  margin-bottom: 20px;
+}
+
+.hero-title {
+  font-family: 'Audiowide', sans-serif;  /* Use Audiowide here */
+  font-size: 3rem;
+  color: #fff;
+  line-height: 1.2;
+  margin-bottom: 20px;
+}
+
+.hero-title .highlight {
+  color: rgb(140, 201, 64);
+}
+
+.hero-text {
+  color: #ccc;
+  font-size: 1rem;
+  line-height: 1.6;
+  max-width: 80%;
+  margin-bottom: 30px;
+}
+
+.get-started-btn {
+  background: rgb(140, 201, 64);
+  color: rgb(1, 41, 51);
+  border: none;
+  padding: 14px 28px;
+  font-size: 1rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.get-started-btn:hover {
+  opacity: 0.9;
+}
+
+/* ---- HERO RIGHT GRAPHICS ---- */
+.hero-right {
+  flex: 1;
+  position: relative;
+  max-width: 45%;
+  height: 600px; /* Adjust based on your actual asset heights */
+}
+
+/* Two semi-transparent blobs behind */
+.blob {
+  position: absolute;
+  opacity: 0.6;
+  z-index: 1;
+}
+
+.blob1 {
+  top: -20px;
+  left: -50px;
+  width: 300px;
+}
+
+.blob2 {
+  bottom: 50px;
+  right: -60px;
+  width: 350px;
+}
+
+/* Make the robot (“cards”) bigger and in front of blobs */
+.cards {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 150%;            /* fill the container's width */
+  max-width: 650px;       /* increase max-width from 400px to 500px */
+  z-index: 2;             /* higher z-index so it sits over the blobs */
+  object-fit: contain;    /* preserve aspect ratio */
+}
+
+/* ---- RESPONSIVE ---- */
+@media (max-width: 900px) {
+  .hero {
+    flex-direction: column;
+    padding-top: 120px;
+  }
+  .hero-left,
+  .hero-right {
+    max-width: 100%;
+    text-align: center;
+  }
+  .hero-text {
+    margin: 0 auto 30px;
+    max-width: 90%;
+  }
+  .blob1,
+  .blob2,
+  .cards {
+    display: none; /* hide all three on small screens */
+  }
+}

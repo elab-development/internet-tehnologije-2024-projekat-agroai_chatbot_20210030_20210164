@@ -1,7 +1,9 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import axios from 'axios';
-import { FaUser, FaEnvelope, FaLock, FaImage } from 'react-icons/fa';
+import { FaUser, FaEnvelope, FaLock } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
+import { FileUploaderRegular } from '@uploadcare/react-uploader';
+import '@uploadcare/react-uploader/core.css';
 import TopLeafs from '../components/TopLeafs';
 
 const slides = [
@@ -11,19 +13,20 @@ const slides = [
   '/images/slide10.jpg',
 ];
 
-const CLOUD_NAME    = process.env.REACT_APP_CLOUDINARY_CLOUD_NAME;
-const UPLOAD_PRESET = process.env.REACT_APP_CLOUDINARY_UPLOAD_PRESET;
-
 export default function AuthPage() {
-  const [mode, setMode] = useState('login');
+  const [mode, setMode] = useState('login'); // 'login' or 'register'
   const [form, setForm] = useState({
-    name: '', email: '', password: '', password_confirmation: '', image_url: ''
+    name: '',
+    email: '',
+    password: '',
+    password_confirmation: '',
+    image_url: ''
   });
   const [error, setError] = useState('');
   const [current, setCurrent] = useState(0);
-  const fileRef = useRef();
   const navigate = useNavigate();
 
+  // slider auto-advance
   useEffect(() => {
     const iv = setInterval(() => {
       setCurrent(i => (i + 1) % slides.length);
@@ -31,44 +34,45 @@ export default function AuthPage() {
     return () => clearInterval(iv);
   }, []);
 
-  const uploadImage = async e => {
-    const file = e.target.files[0];
-    if (!file) return;
-    try {
-      setError('');
-      const data = new FormData();
-      data.append('file', file);
-      data.append('upload_preset', UPLOAD_PRESET);
-      const res = await axios.post(
-        `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`,
-        data
-      );
-      setForm(f => ({ ...f, image_url: res.data.secure_url }));
-    } catch {
-      setError('Image upload failed.');
-    }
-  };
-
-  const handleChange = e =>
+  const handleChange = e => {
     setForm(f => ({ ...f, [e.target.name]: e.target.value }));
+  };
 
   const handleSubmit = async e => {
     e.preventDefault();
     setError('');
-    const url = mode === 'login'
-      ? 'http://127.0.0.1:8000/api/login'
-      : 'http://127.0.0.1:8000/api/register';
-    const payload = { ...form, role: 'regular' };
+    const url =
+      mode === 'login'
+        ? 'http://127.0.0.1:8000/api/login'
+        : 'http://127.0.0.1:8000/api/register';
+
     try {
-      const res = await axios.post(url, payload, {
-        headers: { Accept: 'application/json' }
-      });
-      localStorage.setItem('token', res.data.token);
+      const res = await axios.post(
+        url,
+        { ...form, role: 'regular' },
+        { headers: { Accept: 'application/json' } }
+      );
+
+      const { token, id, name, email, role, imageUrl } = res.data;
+
+      // store in sessionStorage
+      sessionStorage.setItem('auth_token', token);
+      sessionStorage.setItem(
+        'user',
+        JSON.stringify({ id, name, email, role, imageUrl })
+      );
+
       if (mode === 'register') {
+        // switch to login view, clear sensitive fields
         setMode('login');
-        setForm(f => ({ ...f, password: '', password_confirmation: '' }));
+        setForm(f => ({
+          ...f,
+          password: '',
+          password_confirmation: ''
+        }));
       } else {
-        navigate('/chats');
+        // navigate to home (or dashboard)
+        navigate('/home');
       }
     } catch (err) {
       const msg =
@@ -81,6 +85,7 @@ export default function AuthPage() {
 
   return (
     <div className="auth-page">
+      {/* LEFT SLIDER */}
       <div className="auth-left">
         {slides.map((src, i) => (
           <div
@@ -100,6 +105,7 @@ export default function AuthPage() {
         </div>
       </div>
 
+      {/* RIGHT FORM */}
       <div className="auth-right">
         <div className="auth-container">
           <TopLeafs />
@@ -123,10 +129,13 @@ export default function AuthPage() {
           {error && <div className="error">{error}</div>}
 
           <h2>
-            {mode === 'login' ? 'Login to AgroAI' : 'Create your AgroAI account'}
+            {mode === 'login'
+              ? 'Login to AgroAI'
+              : 'Create your AgroAI account'}
           </h2>
 
           <form onSubmit={handleSubmit}>
+            {/* REGISTER: name + email */}
             {mode === 'register' && (
               <div className="form-row">
                 <div className="input-group">
@@ -153,6 +162,7 @@ export default function AuthPage() {
               </div>
             )}
 
+            {/* LOGIN: email */}
             {mode === 'login' && (
               <div className="input-group">
                 <FaEnvelope className="icon" />
@@ -167,6 +177,7 @@ export default function AuthPage() {
               </div>
             )}
 
+            {/* PASSWORDS */}
             <div className={mode === 'register' ? 'form-row' : ''}>
               <div className="input-group">
                 <FaLock className="icon" />
@@ -194,23 +205,20 @@ export default function AuthPage() {
               )}
             </div>
 
+            {/* REGISTER: avatar */}
             {mode === 'register' && (
-              <>
-                <button
-                  type="button"
-                  className="upload-btn"
-                  onClick={() => fileRef.current.click()}
-                >
-                  <FaImage /> Upload avatar
-                </button>
-                <input
-                  ref={fileRef}
-                  type="file"
-                  accept="image/*"
-                  onChange={uploadImage}
-                  style={{ display: 'none' }}
+              <div style={{ margin: '20px 0', textAlign: 'center' }}>
+                <FileUploaderRegular
+                  pubkey={process.env.REACT_APP_UPLOADCARE_PUBLIC_KEY}
+                  sourceList="local, camera, facebook, gdrive"
+                  classNameUploader="uc-light"
+                  onChange={fileInfo => {
+                    if (fileInfo?.cdnUrl) {
+                      setForm(f => ({ ...f, image_url: fileInfo.cdnUrl }));
+                    }
+                  }}
                 />
-              </>
+              </div>
             )}
 
             <button type="submit">
