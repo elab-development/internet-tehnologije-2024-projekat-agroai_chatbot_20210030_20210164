@@ -1019,21 +1019,7 @@ h2, h3 {
   object-fit: cover;
   border: 2px solid rgb(140,201,64);
 }
-.remove-avatar-btn {
-  position: absolute;
-  top: -6px;
-  right: -6px;
-  background: rgb(255, 50, 50);
-  border: none;
-  color: #fff;
-  border-radius: 50%;
-  width: 18px;
-  height: 18px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-}
+
 .upload-avatar-btn {
   background: rgb(140,201,64);
   color: rgb(1,41,51);
@@ -1126,4 +1112,29 @@ h2, h3 {
   color: rgb(1,41,51);
 }
 
+/* Thumbnail image */
+.avatar-thumb {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  object-fit: cover;
+  margin-left: 10px;
+  vertical-align: middle;
+}
+
+/* “Cancel” (remove‐avatar) button */
+.remove-avatar-btn {
+  background: transparent;
+  border: none;
+  margin-left: 8px;
+  padding: 2px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.remove-avatar-btn:hover {
+  opacity: 0.8;
+}
 
