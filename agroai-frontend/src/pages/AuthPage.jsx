@@ -10,7 +10,6 @@ import {
 import { useNavigate } from 'react-router-dom';
 import TopLeafs from '../components/TopLeafs';
 
-// Import our custom hooks:
 import useImageUpload from '../hooks/useImageUpload';
 import useAuth from '../hooks/useAuth';
 
@@ -30,10 +29,10 @@ const slides = [
 export default function AuthPage() {
   const navigate = useNavigate();
 
-  // ─── 1) “mode” is either 'login' or 'register' ────────────────────────
+
   const [mode, setMode] = useState('login');
 
-  // ─── 2) Single form object holding all fields ────────────────────────
+
   const [form, setForm] = useState({
     name: '',
     email: '',
@@ -42,7 +41,7 @@ export default function AuthPage() {
     image_url: '',
   });
 
-  // ─── 3) Hook for ImgBB upload ────────────────────────────────────────
+
   const {
     imageUrl,
     uploading,
@@ -51,17 +50,17 @@ export default function AuthPage() {
     removeImage,
   } = useImageUpload();
 
-  // Whenever imageUrl changes, copy it into form.image_url
+ 
   useEffect(() => {
     if (imageUrl) {
       setForm((prev) => ({ ...prev, image_url: imageUrl }));
     }
   }, [imageUrl]);
 
-  // ─── 4) Hook for login/register API calls ────────────────────────────
+
   const { error: authError, isLoading: authLoading, submitAuth } = useAuth();
 
-  // ─── 5) Reset everything when switching mode ──────────────────────────
+
   const resetAll = () => {
     setForm({
       name: '',
@@ -77,28 +76,28 @@ export default function AuthPage() {
     resetAll();
   }, [mode]);
 
-  // ─── 6) Handle typable fields ────────────────────────────────────────
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setForm((f) => ({ ...f, [name]: value }));
   };
 
-  // ─── 7) Handle form submission ───────────────────────────────────────
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Build payload with “regular” role
+
     const payload = { ...form, role: 'regular' };
 
     try {
       const userData = await submitAuth(mode, payload);
 
       if (mode === 'register') {
-        // On successful registration, switch to login
+
         setMode('login');
         resetAll();
       } else {
-        // On successful login, navigate based on role
+ 
         if (userData.role === 'regular') {
           navigate('/home');
         } else {
@@ -106,11 +105,9 @@ export default function AuthPage() {
         }
       }
     } catch (_) {
-      // authError is already set by useAuth
     }
   };
 
-  // ─── 8) Slider auto-advance every 5 seconds ──────────────────────────
   const [current, setCurrent] = useState(0);
   useEffect(() => {
     const iv = setInterval(() => {
@@ -119,12 +116,10 @@ export default function AuthPage() {
     return () => clearInterval(iv);
   }, []);
 
-  // ─── 9) Input ref for the hidden <input type="file" /> ──────────────
   const fileInputRef = useRef();
 
   return (
     <div className="auth-page">
-      {/* ====================== SLIDER (Left) ====================== */}
       <div className="auth-left">
         {slides.map((src, i) => (
           <div
@@ -144,14 +139,12 @@ export default function AuthPage() {
         </div>
       </div>
 
-      {/* ====================== FORM (Right) ====================== */}
       <div className="auth-right">
         <div className="auth-container">
           <TopLeafs />
 
           <img src="/images/logo.png" alt="AgroAI Logo" className="logo" />
 
-          {/* Toggle Buttons */}
           <div className="toggle-buttons">
             <button
               className={mode === 'login' ? 'active' : ''}
@@ -167,7 +160,6 @@ export default function AuthPage() {
             </button>
           </div>
 
-          {/* Display any authentication error */}
           {authError && <div className="error">{authError}</div>}
 
           <h2>
@@ -177,7 +169,6 @@ export default function AuthPage() {
           </h2>
 
           <form onSubmit={handleSubmit}>
-            {/* ===== REGISTER: Name + Email side by side ===== */}
             {mode === 'register' && (
               <div className="form-row">
                 <div className="input-group">
@@ -204,7 +195,6 @@ export default function AuthPage() {
               </div>
             )}
 
-            {/* ===== LOGIN: Email only ===== */}
             {mode === 'login' && (
               <div className="input-group">
                 <FaEnvelope className="icon" />
@@ -219,7 +209,6 @@ export default function AuthPage() {
               </div>
             )}
 
-            {/* ===== PASSWORD + CONFIRM (if register) ===== */}
             <div className={mode === 'register' ? 'form-row' : ''}>
               <div className="input-group">
                 <FaLock className="icon" />
@@ -247,15 +236,8 @@ export default function AuthPage() {
               )}
             </div>
 
-            {/* ===== REGISTER: Upload Avatar ===== */}
             {mode === 'register' && (
               <div className="avatar-upload-wrapper">
-                {/* 
-                  We place a <label> over the hidden <input type="file" />. 
-                  If there's already an imageUrl, show a check icon + text. 
-                  If uploading, show “Uploading…”
-                  Otherwise, show the “Upload an avatar image” prompt.
-                */}
                 <label
                   htmlFor="avatar-input"
                   className={`upload-cover ${
@@ -275,7 +257,6 @@ export default function AuthPage() {
                   )}
                 </label>
 
-                {/* Hidden <input type="file" /> */}
                 <input
                   id="avatar-input"
                   type="file"
@@ -285,7 +266,6 @@ export default function AuthPage() {
                   ref={fileInputRef}
                 />
 
-                {/* If an avatar is set, show its thumbnail + a “cancel” button */}
                 {form.image_url && (
                   <>
                     <img
@@ -307,14 +287,12 @@ export default function AuthPage() {
                   </>
                 )}
 
-                {/* Show any upload‐specific error */}
                 {uploadError && (
                   <div className="error upload-error">{uploadError}</div>
                 )}
               </div>
             )}
 
-            {/* ===== SUBMIT BUTTON ===== */}
             <button type="submit" disabled={authLoading}>
               {authLoading
                 ? mode === 'login'

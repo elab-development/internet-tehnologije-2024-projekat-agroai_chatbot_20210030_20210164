@@ -15,16 +15,14 @@ export default function Chat() {
   const navigate = useNavigate();
   const messagesEndRef = useRef(null);
 
-  // ─── State ───────────────────────────────────────────────────────────────
-  const [chats, setChats] = useState([]);           // all chats
+  const [chats, setChats] = useState([]);           
   const [activeChat, setActiveChat] = useState(null);
-  const [messages, setMessages] = useState([]);     // messages for activeChat
+  const [messages, setMessages] = useState([]);    
   const [newMessage, setNewMessage] = useState('');
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [userInfo, setUserInfo] = useState({});     // { name, image_url, ... }
-  const [menuOpen, setMenuOpen] = useState(false);  // three‐dots dropdown
+  const [userInfo, setUserInfo] = useState({});     
+  const [menuOpen, setMenuOpen] = useState(false);  
 
-  // ─── 1) On mount: load user + fetch all chats ────────────────────────────
   useEffect(() => {
     const token = sessionStorage.getItem('token');
     if (!token) {
@@ -32,7 +30,6 @@ export default function Chat() {
       return;
     }
 
-    // Pull the stored user object (saved at login time)
     const userEmail = sessionStorage.getItem('userEmail');
     const userId = sessionStorage.getItem('userId');
     const userImage = sessionStorage.getItem('userImage');
@@ -47,7 +44,6 @@ export default function Chat() {
     };
     setUserInfo(storedUser);
 
-    // Fetch chat list
     axios
       .get('http://127.0.0.1:8000/api/chats', {
         headers: {
@@ -56,7 +52,6 @@ export default function Chat() {
         }
       })
       .then((res) => {
-        // Laravel Resource: actual array in res.data.data
         const chatArray = res.data.data || [];
         setChats(chatArray);
 
@@ -71,7 +66,6 @@ export default function Chat() {
       });
   }, [navigate]);
 
-  // ─── 2) Whenever activeChat changes, load its messages ─────────────────────
   useEffect(() => {
     if (!activeChat) {
       setMessages([]);
@@ -95,14 +89,12 @@ export default function Chat() {
       });
   }, [activeChat]);
 
-  // ─── 3) Auto‐scroll to bottom when messages change ─────────────────────────
   useEffect(() => {
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
     }
   }, [messages]);
 
-  // ─── 4) Send a new message ─────────────────────────────────────────────────
   const handleSendMessage = async () => {
     if (!newMessage.trim() || !activeChat) return;
     const token = sessionStorage.getItem('token');
@@ -117,7 +109,6 @@ export default function Chat() {
           }
         }
       );
-      // Append newly created message (with AI response embedded)
       setMessages((prev) => [...prev, res.data.data]);
       setNewMessage('');
     } catch (err) {
@@ -125,7 +116,6 @@ export default function Chat() {
     }
   };
 
-  // ─── 5) Create a brand‐new chat ────────────────────────────────────────────
   const handleNewChat = async () => {
     const token = sessionStorage.getItem('token');
     const title = window.prompt('Enter a title for your new chat:');
@@ -151,7 +141,6 @@ export default function Chat() {
     }
   };
 
-  // ─── 6) Logout ────────────────────────────────────────────────────────────
   const handleLogout = async () => {
     const token = sessionStorage.getItem('token');
     try {
@@ -166,32 +155,26 @@ export default function Chat() {
         }
       );
     } catch (_) {
-      /* ignore */
     }
     sessionStorage.clear();
     navigate('/');
   };
 
-  // ─── 7) Toggle sidebar open/closed ─────────────────────────────────────────
   const toggleSidebar = () => {
     setSidebarOpen((prev) => !prev);
   };
 
-  // ─── 8) Select a chat from the sidebar ────────────────────────────────────
   const selectChat = (chat) => {
     setActiveChat(chat);
-    // Close sidebar on selection (optional)
     setSidebarOpen(false);
   };
 
-  // ─── 9) Toggle the three‐dots menu ─────────────────────────────────────────
   const toggleMenu = () => {
     setMenuOpen((prev) => !prev);
   };
 
   return (
     <div className="chat-page">
-      {/* ─────────────────── Top Bar ───────────────────────────────────────────── */}
       <div className="chat-topbar">
         <button
           className="hamburger-btn"
@@ -210,7 +193,6 @@ export default function Chat() {
         </div>
 
         <div className="user-info-dropdown">
-          {/* User avatar (fallback to default if no image_url present) */}
           <img
             src={
               userInfo.image_url
@@ -222,7 +204,6 @@ export default function Chat() {
           />
           <span className="user-name">{userInfo.name || 'User'}</span>
 
-          {/* Three dots icon */}
           <div className="three-dots-wrapper">
             <button
               className="three-dots-btn"
@@ -250,7 +231,6 @@ export default function Chat() {
         </div>
       </div>
 
-      {/* ─────────────────── Sidebar ───────────────────────────────────────────── */}
       <div className={`chat-sidebar ${sidebarOpen ? 'open' : 'closed'}`}>
         <div className="sidebar-header">
           <h3>My Chats</h3>
@@ -276,7 +256,6 @@ export default function Chat() {
         </ul>
       </div>
 
-      {/* ─────────────────── Main Chat Area ───────────────────────────────────── */}
       <div className="chat-main">
         {!activeChat ? (
           <div className="no-chat-selected">
@@ -284,10 +263,8 @@ export default function Chat() {
           </div>
         ) : (
           <>
-            {/* ── Messages (Scrollable Container) ───────────────────────────────── */}
             <div className="chat-messages-container">
               {messages.map((msg, idx) => {
-                // If msg.response exists, render both user and AI bubbles together
                 if (msg.response) {
                   return (
                     <div key={idx}>
@@ -309,7 +286,6 @@ export default function Chat() {
                   );
                 }
 
-                // Otherwise, decide side by msg.role (legacy support)
                 const isAI = msg.role === 'assistant';
                 return (
                   <div
@@ -331,7 +307,6 @@ export default function Chat() {
               <div ref={messagesEndRef} />
             </div>
 
-            {/* ── Input + Send Button ────────────────────────────────────────────── */}
             <div className="chat-input-container">
               <input
                 type="text"

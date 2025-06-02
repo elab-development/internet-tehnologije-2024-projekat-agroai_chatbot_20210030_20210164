@@ -31,7 +31,6 @@ export default function Home() {
 
         <div className="hero-right">
 
-          {/* The robot image (now larger and in front) */}
           <img
             src="/images/agroai-bot.png"
             alt="AI agriculture robot"

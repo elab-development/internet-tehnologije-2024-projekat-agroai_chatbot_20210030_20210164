@@ -12,23 +12,20 @@ import {
 } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 
-// (Make sure you have imported the CSS from App.css or AdminDashboard.css
-// containing the styles shown after this file.)
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
 
-  // ─── State ──────────────────────────────────────────────────────────────
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [menuSel, setMenuSel] = useState('users'); // 'users' or 'models'
-  const [userInfo, setUserInfo] = useState({});     // logged‐in admin
-  const [users, setUsers] = useState([]);           // all non-admin users
-  const [searchTerm, setSearchTerm] = useState(''); // filter by name
+  const [menuSel, setMenuSel] = useState('users'); 
+  const [userInfo, setUserInfo] = useState({});    
+  const [users, setUsers] = useState([]);           
+  const [searchTerm, setSearchTerm] = useState('');
   const [filteredUsers, setFilteredUsers] = useState([]);
 
-  // Pagination state
+  
   const [currentPage, setCurrentPage] = useState(1);
-  const usersPerPage = 4; // show 4 users per page
+  const usersPerPage = 4; 
 
   const [showEditModal, setShowEditModal] = useState(false);
   const [editForm, setEditForm] = useState({
@@ -39,21 +36,21 @@ export default function AdminDashboard() {
   });
   const [uploading, setUploading] = useState(false);
 
-  const [models, setModels] = useState([]);         // top AI models
+  const [models, setModels] = useState([]);         
   const [loadingModels, setLoadingModels] = useState(false);
   const [modelsSortAsc, setModelsSortAsc] = useState(false);
 
   const [showUserDropdown, setShowUserDropdown] = useState(false);
   const fileInputRef = useRef();
 
-  // ─── 1) On mount: check token + load admin info + fetch users ─────────────
+
   useEffect(() => {
     const token = sessionStorage.getItem('token');
     if (!token) {
       navigate('/');
       return;
     }
-    // Pull stored admin info from sessionStorage
+  
     const userEmail = sessionStorage.getItem('userEmail');
     const userId = sessionStorage.getItem('userId');
     const userImage = sessionStorage.getItem('userImage');
@@ -69,10 +66,10 @@ export default function AdminDashboard() {
     setUserInfo(storedUser);
 
     fetchUsers();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+  
   }, []);
 
-  // ─── 2) Fetch all users (filter out administrators) ────────────────────────
+
   const fetchUsers = async () => {
     const token = sessionStorage.getItem('token');
     try {
@@ -82,23 +79,23 @@ export default function AdminDashboard() {
           Accept: 'application/json'
         }
       });
-      // res.data.data is array of all users (including admin); filter out admins
+
       const all = res.data.data || [];
       const nonAdmins = all.filter((u) => u.role !== 'administrator');
       setUsers(nonAdmins);
       setFilteredUsers(nonAdmins);
-      setCurrentPage(1); // reset to first page
+      setCurrentPage(1); 
     } catch (err) {
       console.error('Error fetching users:', err);
       if (err.response && err.response.status === 403) {
-        // not an admin → log out
+  
         sessionStorage.clear();
         navigate('/');
       }
     }
   };
 
-  // ─── 3) Filter users whenever searchTerm or users change ──────────────────
+
   useEffect(() => {
     const term = searchTerm.trim().toLowerCase();
     if (!term) {
@@ -108,15 +105,15 @@ export default function AdminDashboard() {
         users.filter((u) => u.name.toLowerCase().includes(term))
       );
     }
-    setCurrentPage(1); // reset to first page on new filter
+    setCurrentPage(1); 
   }, [searchTerm, users]);
 
-  // ─── 4) Toggle sidebar ────────────────────────────────────────────────────
+  
   const toggleSidebar = () => {
     setSidebarOpen((prev) => !prev);
   };
 
-  // ─── 5) Logout routine ────────────────────────────────────────────────────
+  
   const handleLogout = async () => {
     const token = sessionStorage.getItem('token');
     try {
@@ -131,19 +128,19 @@ export default function AdminDashboard() {
         }
       );
     } catch (_) {
-      // ignore
+
     }
     sessionStorage.clear();
     navigate('/');
   };
 
-  // ─── 6) Edit modal open/close ──────────────────────────────────────────────
+
   const openEditModal = (user) => {
     setEditForm({
       id: user.id,
       name: user.name,
       email: user.email,
-      image_url: user.imageUrl || '' // note: backend field name might differ
+      image_url: user.imageUrl || '' 
     });
     setShowEditModal(true);
   };
@@ -152,13 +149,13 @@ export default function AdminDashboard() {
     setEditForm({ id: '', name: '', email: '', image_url: '' });
   };
 
-  // ─── 7) Handle form changes ───────────────────────────────────────────────
+
   const handleEditChange = (e) => {
     const { name, value } = e.target;
     setEditForm((f) => ({ ...f, [name]: value }));
   };
 
-  // ─── 8) Upload new avatar to ImgBB ────────────────────────────────────────
+ 
   const handleAvatarSelect = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -171,7 +168,6 @@ export default function AdminDashboard() {
     setUploading(true);
     const reader = new FileReader();
     reader.onloadend = async () => {
-      // strip off "data:*/*;base64," prefix
       const base64data = reader.result.split(',')[1];
       try {
         const formData = new FormData();
@@ -193,12 +189,12 @@ export default function AdminDashboard() {
     reader.readAsDataURL(file);
   };
 
-  // ─── 9) Remove avatar from edit form ──────────────────────────────────────
+
   const handleRemoveAvatar = () => {
     setEditForm((f) => ({ ...f, image_url: '' }));
   };
 
-  // ─── 10) Submit updated user data ─────────────────────────────────────────
+
   const handleEditSubmit = async (e) => {
     e.preventDefault();
     const token = sessionStorage.getItem('token');
@@ -214,7 +210,7 @@ export default function AdminDashboard() {
           }
         }
       );
-      // Update local users list
+
       const updated = res.data.data;
       setUsers((prev) =>
         prev.map((u) => (u.id === updated.id ? updated : u))
@@ -226,27 +222,27 @@ export default function AdminDashboard() {
     }
   };
 
-  // ─── 11) Fetch Top AI Models when selected ─────────────────────────────────
+
   useEffect(() => {
     if (menuSel === 'models') {
       fetchTopModels();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+ 
   }, [menuSel]);
 
   const fetchTopModels = async () => {
     setLoadingModels(true);
     try {
-      // Example: Hugging Face API: models sorted by downloads
+ 
       const res = await axios.get(
         'https://huggingface.co/api/models?sort=downloads'
       );
-      // res.data is an array of model objects; take first 10
+
       const topTen = (res.data || []).slice(0, 10).map((m) => ({
         id: m.modelId,
         downloads: m.downloads || 0
       }));
-      // By default, sort descending
+
       topTen.sort((a, b) => b.downloads - a.downloads);
       setModels(topTen);
       setModelsSortAsc(false);
@@ -258,7 +254,7 @@ export default function AdminDashboard() {
     }
   };
 
-  // ─── 12) Toggle sort order on "Downloads" column ────────────────────────
+
   const toggleModelSort = () => {
     const asc = !modelsSortAsc;
     const sorted = [...models].sort((a, b) => {
@@ -270,10 +266,9 @@ export default function AdminDashboard() {
     setModelsSortAsc(asc);
   };
 
-  // ─── 13) Pagination Logic for Users ─────────────────────────────────────
+
   const totalPages = Math.ceil(filteredUsers.length / usersPerPage);
 
-  // When filteredUsers changes, ensure current page is within valid range
   useEffect(() => {
     if (currentPage > totalPages) {
       setCurrentPage(1);
@@ -285,7 +280,6 @@ export default function AdminDashboard() {
     setCurrentPage(newPage);
   };
 
-  // Determine which slice of filteredUsers to show
   const indexOfFirstUser = (currentPage - 1) * usersPerPage;
   const indexOfLastUser = indexOfFirstUser + usersPerPage;
   const currentUsers = filteredUsers.slice(
@@ -293,10 +287,10 @@ export default function AdminDashboard() {
     indexOfLastUser
   );
 
-  // ─── JSX ────────────────────────────────────────────────────────────────
+ 
   return (
     <div className="admin-dashboard">
-      {/* ─────────────────── Top Bar ───────────────────────────────────────────── */}
+
       <div className="topbar">
         <button className="hamburger-btn" onClick={toggleSidebar}>
           <FaBars size={20} color="rgb(140,201,64)" />
@@ -332,7 +326,7 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      {/* ─────────────────── Sidebar ───────────────────────────────────────────── */}
+ 
       <div className={`sidebar ${sidebarOpen ? 'open' : 'closed'}`}>
         <div className="sidebar-header">
           <h3>Admin Menu</h3>
@@ -361,7 +355,7 @@ export default function AdminDashboard() {
         </ul>
       </div>
 
-      {/* ─────────────────── Main Content ──────────────────────────────────────── */}
+ 
       <div className="main-content">
         {menuSel === 'users' ? (
           <>
@@ -380,7 +374,7 @@ export default function AdminDashboard() {
               />
             </div>
 
-            {/* Users Table */}
+
             <div className="table-container">
               <table className="users-table">
                 <thead>
@@ -425,7 +419,7 @@ export default function AdminDashboard() {
               </table>
             </div>
 
-            {/* Pagination Controls */}
+
             {filteredUsers.length > usersPerPage && (
               <div className="pagination-container">
                 <button
@@ -459,7 +453,7 @@ export default function AdminDashboard() {
               </div>
             )}
 
-            {/* ── Edit User Modal ─────────────────────────────────────────────── */}
+ 
             {showEditModal && (
               <div className="modal-overlay" onClick={closeEditModal}>
                 <div
@@ -555,7 +549,7 @@ export default function AdminDashboard() {
           </>
         ) : (
           <>
-            {/* Top AI Models View */}
+   
             <div className="models-container">
               {loadingModels ? (
                 <p>Loading top AI models…</p>
