@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef } from 'react';
-import axios from 'axios';
 import {
   FaUser,
   FaEnvelope,
@@ -10,6 +9,10 @@ import {
 } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import TopLeafs from '../components/TopLeafs';
+
+// Import our custom hooks:
+import useImageUpload from '../hooks/useImageUpload';
+import useAuth from '../hooks/useAuth';
 
 const slides = [
   '/images/slide1.jpg',
@@ -27,10 +30,10 @@ const slides = [
 export default function AuthPage() {
   const navigate = useNavigate();
 
-  // “mode” can be 'login' or 'register'
+  // ─── 1) “mode” is either 'login' or 'register' ────────────────────────
   const [mode, setMode] = useState('login');
 
-  // We keep a single “form” object for all fields:
+  // ─── 2) Single form object holding all fields ────────────────────────
   const [form, setForm] = useState({
     name: '',
     email: '',
@@ -39,35 +42,27 @@ export default function AuthPage() {
     image_url: '',
   });
 
-  const [error, setError] = useState('');
-  const [uploadError, setUploadError] = useState('');
-  const [uploading, setUploading] = useState(false);
+  // ─── 3) Hook for ImgBB upload ────────────────────────────────────────
+  const {
+    imageUrl,
+    uploading,
+    uploadError,
+    onFileSelect,
+    removeImage,
+  } = useImageUpload();
 
-  // Current slide index:
-  const [current, setCurrent] = useState(0);
-
-  // A ref to trigger the hidden <input type="file" />
-  const fileInputRef = useRef();
-
-  // -----------------------------------------------------
-  // 1) SLIDER: Auto‐advance every 5 seconds
-  // -----------------------------------------------------
+  // Whenever imageUrl changes, copy it into form.image_url
   useEffect(() => {
-    const iv = setInterval(() => {
-      setCurrent((i) => (i + 1) % slides.length);
-    }, 5000);
-    return () => clearInterval(iv);
-  }, []);
+    if (imageUrl) {
+      setForm((prev) => ({ ...prev, image_url: imageUrl }));
+    }
+  }, [imageUrl]);
 
-  // -----------------------------------------------------
-  // 2) RESET EVERYTHING when switching modes (especially into 'register')
-  // -----------------------------------------------------
+  // ─── 4) Hook for login/register API calls ────────────────────────────
+  const { error: authError, isLoading: authLoading, submitAuth } = useAuth();
+
+  // ─── 5) Reset everything when switching mode ──────────────────────────
   const resetAll = () => {
-    setError('');
-    setUploadError('');
-    setUploading(false);
-
-    // Reset form fields (clearing out name/email/passwords/avatar)
     setForm({
       name: '',
       email: '',
@@ -75,134 +70,61 @@ export default function AuthPage() {
       password_confirmation: '',
       image_url: '',
     });
+    removeImage();
   };
 
-  // Whenever mode changes, clear everything:
   useEffect(() => {
     resetAll();
   }, [mode]);
 
-  // -----------------------------------------------------
-  // 3) HANDLE FORM FIELD CHANGES
-  // -----------------------------------------------------
+  // ─── 6) Handle typable fields ────────────────────────────────────────
   const handleChange = (e) => {
-    setForm((f) => ({ ...f, [e.target.name]: e.target.value }));
+    const { name, value } = e.target;
+    setForm((f) => ({ ...f, [name]: value }));
   };
 
-  // -----------------------------------------------------
-  // 4) HANDLE AVATAR UPLOAD to ImgBB
-  // -----------------------------------------------------
-  const handleAvatarFile = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    setUploadError('');
-    setUploading(true);
-
-    try {
-      // 1) Convert file → Base64
-      const reader = new FileReader();
-      reader.onloadend = async () => {
-        const fullDataUrl = reader.result; // "data:image/png;base64,AAAA..."
-        const base64only = fullDataUrl.split(',')[1]; // strip the metadata
-
-        // 2) Build FormData
-        const data = new FormData();
-        data.append('image', base64only);
-        data.append('expiration', '600'); // optional: auto-delete after 600s
-
-        // 3) POST to ImgBB
-        const imgbbKey = process.env.REACT_APP_IMGBB_API_KEY;
-        const url = `https://api.imgbb.com/1/upload?key=${imgbbKey}`;
-        const res = await axios.post(url, data, {
-          headers: { 'Content-Type': 'multipart/form-data' },
-        });
-
-        // 4) On success, store the returned display_url:
-        if (res.data && res.data.data && res.data.data.display_url) {
-          setForm((f) => ({
-            ...f,
-            image_url: res.data.data.display_url,
-          }));
-        } else {
-          setUploadError('Upload succeeded, but no preview URL was returned.');
-        }
-        setUploading(false);
-      };
-
-      reader.onerror = () => {
-        setUploadError('Failed to read file.');
-        setUploading(false);
-      };
-
-      reader.readAsDataURL(file);
-    } catch (err) {
-      console.error('Upload error:', err);
-      setUploadError('Image upload failed. Please try again.');
-      setUploading(false);
-    }
-  };
-
-  // -----------------------------------------------------
-  // 5) REMOVE (CANCEL) UPLOADED AVATAR
-  // -----------------------------------------------------
-  const handleRemoveAvatar = () => {
-    setForm((f) => ({ ...f, image_url: '' }));
-    setUploadError('');
-    setUploading(false);
-  };
-
-  // -----------------------------------------------------
-  // 6) SUBMIT FORM (LOGIN or REGISTER)
-  // -----------------------------------------------------
+  // ─── 7) Handle form submission ───────────────────────────────────────
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
 
-    const endpoint =
-      mode === 'login'
-        ? 'http://127.0.0.1:8000/api/login'
-        : 'http://127.0.0.1:8000/api/register';
+    // Build payload with “regular” role
+    const payload = { ...form, role: 'regular' };
 
     try {
-      const payload = { ...form, role: 'regular' };
-      const res = await axios.post(endpoint, payload, {
-        headers: { Accept: 'application/json' },
-      });
-
-      // Store in sessionStorage (token + user data)
-      sessionStorage.setItem('token', res.data.token);
-      sessionStorage.setItem('userId', res.data.id);
-      sessionStorage.setItem('userName', res.data.name);
-      sessionStorage.setItem('userEmail', res.data.email);
-      sessionStorage.setItem('userRole', res.data.role);
-      sessionStorage.setItem('userImage', res.data.imageUrl || '');
+      const userData = await submitAuth(mode, payload);
 
       if (mode === 'register') {
-        // After register, switch to login and reset fields 
+        // On successful registration, switch to login
         setMode('login');
         resetAll();
       } else {
-        // On successful login, go to /home
-        if(res.data.role === 'regular'){
+        // On successful login, navigate based on role
+        if (userData.role === 'regular') {
           navigate('/home');
-        }else{
+        } else {
           navigate('/dashboard');
         }
-        
       }
-    } catch (err) {
-      const msg =
-        err.response?.data?.message ||
-        err.response?.data?.error ||
-        'Something went wrong';
-      setError(msg);
+    } catch (_) {
+      // authError is already set by useAuth
     }
   };
 
+  // ─── 8) Slider auto-advance every 5 seconds ──────────────────────────
+  const [current, setCurrent] = useState(0);
+  useEffect(() => {
+    const iv = setInterval(() => {
+      setCurrent((i) => (i + 1) % slides.length);
+    }, 5000);
+    return () => clearInterval(iv);
+  }, []);
+
+  // ─── 9) Input ref for the hidden <input type="file" /> ──────────────
+  const fileInputRef = useRef();
+
   return (
     <div className="auth-page">
-      {/* ====================== SLIDER (Left Side) ====================== */}
+      {/* ====================== SLIDER (Left) ====================== */}
       <div className="auth-left">
         {slides.map((src, i) => (
           <div
@@ -211,8 +133,6 @@ export default function AuthPage() {
             style={{ backgroundImage: `url(${src})` }}
           />
         ))}
-
-        {/* Horizontal “lines” navigation */}
         <div className="line-container">
           {slides.map((_, i) => (
             <div
@@ -224,14 +144,14 @@ export default function AuthPage() {
         </div>
       </div>
 
-      {/* ====================== FORM (Right Side) ====================== */}
+      {/* ====================== FORM (Right) ====================== */}
       <div className="auth-right">
         <div className="auth-container">
           <TopLeafs />
 
           <img src="/images/logo.png" alt="AgroAI Logo" className="logo" />
 
-          {/* Toggle between “Login” / “Register” */}
+          {/* Toggle Buttons */}
           <div className="toggle-buttons">
             <button
               className={mode === 'login' ? 'active' : ''}
@@ -247,7 +167,8 @@ export default function AuthPage() {
             </button>
           </div>
 
-          {error && <div className="error">{error}</div>}
+          {/* Display any authentication error */}
+          {authError && <div className="error">{authError}</div>}
 
           <h2>
             {mode === 'login'
@@ -256,7 +177,7 @@ export default function AuthPage() {
           </h2>
 
           <form onSubmit={handleSubmit}>
-            {/* ===== REGISTER: NAME + EMAIL ===== */}
+            {/* ===== REGISTER: Name + Email side by side ===== */}
             {mode === 'register' && (
               <div className="form-row">
                 <div className="input-group">
@@ -283,7 +204,7 @@ export default function AuthPage() {
               </div>
             )}
 
-            {/* ===== LOGIN: EMAIL ===== */}
+            {/* ===== LOGIN: Email only ===== */}
             {mode === 'login' && (
               <div className="input-group">
                 <FaEnvelope className="icon" />
@@ -298,7 +219,7 @@ export default function AuthPage() {
               </div>
             )}
 
-            {/* ===== PASSWORD (+ CONFIRM if registering) ===== */}
+            {/* ===== PASSWORD + CONFIRM (if register) ===== */}
             <div className={mode === 'register' ? 'form-row' : ''}>
               <div className="input-group">
                 <FaLock className="icon" />
@@ -326,12 +247,14 @@ export default function AuthPage() {
               )}
             </div>
 
-            {/* ===== REGISTER: UPLOAD AVATAR ===== */}
+            {/* ===== REGISTER: Upload Avatar ===== */}
             {mode === 'register' && (
               <div className="avatar-upload-wrapper">
                 {/* 
-                  Our custom “Upload an avatar image” button covers the file input.
-                  When user clicks it, we forward click to hidden <input type="file" />.
+                  We place a <label> over the hidden <input type="file" />. 
+                  If there's already an imageUrl, show a check icon + text. 
+                  If uploading, show “Uploading…”
+                  Otherwise, show the “Upload an avatar image” prompt.
                 */}
                 <label
                   htmlFor="avatar-input"
@@ -352,20 +275,17 @@ export default function AuthPage() {
                   )}
                 </label>
 
-                {/* 
-                  Hidden file input to capture local files. 
-                  onChange → handleAvatarFile
-                */}
+                {/* Hidden <input type="file" /> */}
                 <input
                   id="avatar-input"
                   type="file"
                   accept="image/*"
                   style={{ display: 'none' }}
-                  onChange={handleAvatarFile}
+                  onChange={(e) => onFileSelect(e.target.files[0])}
                   ref={fileInputRef}
                 />
 
-                {/* As soon as we have an image, show a small thumbnail + remove button to the right */}
+                {/* If an avatar is set, show its thumbnail + a “cancel” button */}
                 {form.image_url && (
                   <>
                     <img
@@ -376,19 +296,33 @@ export default function AuthPage() {
                     <button
                       type="button"
                       className="remove-avatar-btn"
-                      onClick={handleRemoveAvatar}
+                      onClick={() => {
+                        removeImage();
+                        setForm((f) => ({ ...f, image_url: '' }));
+                      }}
                       title="Remove avatar"
                     >
                       <FaTimesCircle size={18} color="rgb(255, 80, 80)" />
                     </button>
                   </>
                 )}
+
+                {/* Show any upload‐specific error */}
+                {uploadError && (
+                  <div className="error upload-error">{uploadError}</div>
+                )}
               </div>
             )}
 
             {/* ===== SUBMIT BUTTON ===== */}
-            <button type="submit">
-              {mode === 'login' ? 'Login' : 'Create account'}
+            <button type="submit" disabled={authLoading}>
+              {authLoading
+                ? mode === 'login'
+                  ? 'Logging in…'
+                  : 'Creating…'
+                : mode === 'login'
+                ? 'Login'
+                : 'Create account'}
             </button>
           </form>
         </div>
