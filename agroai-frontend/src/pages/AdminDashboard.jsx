@@ -6,20 +6,30 @@ import {
   FaSignOutAlt,
   FaSearch,
   FaEdit,
-  FaTimes
+  FaTimes,
+  FaSortAmountDown,
+  FaSortAmountUp
 } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
+
+// (Make sure you have imported the CSS from App.css or AdminDashboard.css
+// containing the styles shown after this file.)
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
 
-  // ─── State ─────────────────────────────────────────────────
+  // ─── State ──────────────────────────────────────────────────────────────
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [menuSel, setMenuSel] = useState('users'); // 'users' or 'models'
   const [userInfo, setUserInfo] = useState({});     // logged‐in admin
-  const [users, setUsers] = useState([]);           // list of all non-admin users
+  const [users, setUsers] = useState([]);           // all non-admin users
   const [searchTerm, setSearchTerm] = useState(''); // filter by name
   const [filteredUsers, setFilteredUsers] = useState([]);
+
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const usersPerPage = 4; // show 4 users per page
+
   const [showEditModal, setShowEditModal] = useState(false);
   const [editForm, setEditForm] = useState({
     id: '',
@@ -28,10 +38,12 @@ export default function AdminDashboard() {
     image_url: ''
   });
   const [uploading, setUploading] = useState(false);
+
   const [models, setModels] = useState([]);         // top AI models
   const [loadingModels, setLoadingModels] = useState(false);
-  const [showUserDropdown, setShowUserDropdown] = useState(false);
+  const [modelsSortAsc, setModelsSortAsc] = useState(false);
 
+  const [showUserDropdown, setShowUserDropdown] = useState(false);
   const fileInputRef = useRef();
 
   // ─── 1) On mount: check token + load admin info + fetch users ─────────────
@@ -48,11 +60,11 @@ export default function AdminDashboard() {
     const userName = sessionStorage.getItem('userName');
     const userRole = sessionStorage.getItem('userRole');
     const storedUser = {
-        email: userEmail,
-        id: userId,
-        image_url: userImage,
-        name: userName,
-        role: userRole,
+      email: userEmail,
+      id: userId,
+      image_url: userImage,
+      name: userName,
+      role: userRole
     };
     setUserInfo(storedUser);
 
@@ -60,7 +72,7 @@ export default function AdminDashboard() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // ─── 2) Fetch all users (filter out administrators) ─────────────────────────
+  // ─── 2) Fetch all users (filter out administrators) ────────────────────────
   const fetchUsers = async () => {
     const token = sessionStorage.getItem('token');
     try {
@@ -73,9 +85,9 @@ export default function AdminDashboard() {
       // res.data.data is array of all users (including admin); filter out admins
       const all = res.data.data || [];
       const nonAdmins = all.filter((u) => u.role !== 'administrator');
-      console.log(nonAdmins);
       setUsers(nonAdmins);
       setFilteredUsers(nonAdmins);
+      setCurrentPage(1); // reset to first page
     } catch (err) {
       console.error('Error fetching users:', err);
       if (err.response && err.response.status === 403) {
@@ -86,7 +98,7 @@ export default function AdminDashboard() {
     }
   };
 
-  // ─── 3) Filter users whenever searchTerm or users change ────────────────────
+  // ─── 3) Filter users whenever searchTerm or users change ──────────────────
   useEffect(() => {
     const term = searchTerm.trim().toLowerCase();
     if (!term) {
@@ -96,14 +108,15 @@ export default function AdminDashboard() {
         users.filter((u) => u.name.toLowerCase().includes(term))
       );
     }
+    setCurrentPage(1); // reset to first page on new filter
   }, [searchTerm, users]);
 
-  // ─── 4) Toggle sidebar ─────────────────────────────────────────────────────
+  // ─── 4) Toggle sidebar ────────────────────────────────────────────────────
   const toggleSidebar = () => {
     setSidebarOpen((prev) => !prev);
   };
 
-  // ─── 5) Logout routine ─────────────────────────────────────────────────────
+  // ─── 5) Logout routine ────────────────────────────────────────────────────
   const handleLogout = async () => {
     const token = sessionStorage.getItem('token');
     try {
@@ -124,13 +137,13 @@ export default function AdminDashboard() {
     navigate('/');
   };
 
-  // ─── 6) Edit modal open/close ───────────────────────────────────────────────
+  // ─── 6) Edit modal open/close ──────────────────────────────────────────────
   const openEditModal = (user) => {
     setEditForm({
       id: user.id,
       name: user.name,
       email: user.email,
-      image_url: user.image_url || ''
+      image_url: user.imageUrl || '' // note: backend field name might differ
     });
     setShowEditModal(true);
   };
@@ -139,13 +152,13 @@ export default function AdminDashboard() {
     setEditForm({ id: '', name: '', email: '', image_url: '' });
   };
 
-  // ─── 7) Handle form changes ────────────────────────────────────────────────
+  // ─── 7) Handle form changes ───────────────────────────────────────────────
   const handleEditChange = (e) => {
     const { name, value } = e.target;
     setEditForm((f) => ({ ...f, [name]: value }));
   };
 
-  // ─── 8) Upload new avatar to imgBB ─────────────────────────────────────────
+  // ─── 8) Upload new avatar to ImgBB ────────────────────────────────────────
   const handleAvatarSelect = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -158,7 +171,7 @@ export default function AdminDashboard() {
     setUploading(true);
     const reader = new FileReader();
     reader.onloadend = async () => {
-      // strip off the "data:*/*;base64," prefix
+      // strip off "data:*/*;base64," prefix
       const base64data = reader.result.split(',')[1];
       try {
         const formData = new FormData();
@@ -171,7 +184,7 @@ export default function AdminDashboard() {
         const url = res.data.data.url;
         setEditForm((f) => ({ ...f, image_url: url }));
       } catch (err) {
-        console.error('Error uploading to imgBB:', err);
+        console.error('Error uploading to ImgBB:', err);
         alert('Upload failed.');
       } finally {
         setUploading(false);
@@ -180,12 +193,12 @@ export default function AdminDashboard() {
     reader.readAsDataURL(file);
   };
 
-  // ─── 9) Remove avatar from edit form ───────────────────────────────────────
+  // ─── 9) Remove avatar from edit form ──────────────────────────────────────
   const handleRemoveAvatar = () => {
     setEditForm((f) => ({ ...f, image_url: '' }));
   };
 
-  // ─── 10) Submit updated user data ──────────────────────────────────────────
+  // ─── 10) Submit updated user data ─────────────────────────────────────────
   const handleEditSubmit = async (e) => {
     e.preventDefault();
     const token = sessionStorage.getItem('token');
@@ -224,7 +237,7 @@ export default function AdminDashboard() {
   const fetchTopModels = async () => {
     setLoadingModels(true);
     try {
-      // Example: using Hugging Face API to get models sorted by downloads
+      // Example: Hugging Face API: models sorted by downloads
       const res = await axios.get(
         'https://huggingface.co/api/models?sort=downloads'
       );
@@ -233,7 +246,10 @@ export default function AdminDashboard() {
         id: m.modelId,
         downloads: m.downloads || 0
       }));
+      // By default, sort descending
+      topTen.sort((a, b) => b.downloads - a.downloads);
       setModels(topTen);
+      setModelsSortAsc(false);
     } catch (err) {
       console.error('Error fetching models:', err);
       setModels([]);
@@ -241,6 +257,41 @@ export default function AdminDashboard() {
       setLoadingModels(false);
     }
   };
+
+  // ─── 12) Toggle sort order on "Downloads" column ────────────────────────
+  const toggleModelSort = () => {
+    const asc = !modelsSortAsc;
+    const sorted = [...models].sort((a, b) => {
+      return asc
+        ? a.downloads - b.downloads
+        : b.downloads - a.downloads;
+    });
+    setModels(sorted);
+    setModelsSortAsc(asc);
+  };
+
+  // ─── 13) Pagination Logic for Users ─────────────────────────────────────
+  const totalPages = Math.ceil(filteredUsers.length / usersPerPage);
+
+  // When filteredUsers changes, ensure current page is within valid range
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(1);
+    }
+  }, [filteredUsers, totalPages]);
+
+  const handlePageChange = (newPage) => {
+    if (newPage < 1 || newPage > totalPages) return;
+    setCurrentPage(newPage);
+  };
+
+  // Determine which slice of filteredUsers to show
+  const indexOfFirstUser = (currentPage - 1) * usersPerPage;
+  const indexOfLastUser = indexOfFirstUser + usersPerPage;
+  const currentUsers = filteredUsers.slice(
+    indexOfFirstUser,
+    indexOfLastUser
+  );
 
   // ─── JSX ────────────────────────────────────────────────────────────────
   return (
@@ -265,7 +316,11 @@ export default function AdminDashboard() {
             className="user-avatar"
           />
           <span className="user-name">{userInfo.name}</span>
-          <FaEllipsisV size={18} color="white" style={{ marginLeft: '8px' }} />
+          <FaEllipsisV
+            size={18}
+            color="white"
+            style={{ marginLeft: '8px' }}
+          />
           {showUserDropdown && (
             <div className="user-dropdown-menu">
               <button className="dropdown-item" onClick={handleLogout}>
@@ -312,7 +367,10 @@ export default function AdminDashboard() {
           <>
             {/* Search Bar */}
             <div className="search-bar">
-              <FaSearch color="rgb(140,201,64)" style={{ marginRight: '6px' }} />
+              <FaSearch
+                color="rgb(140,201,64)"
+                style={{ marginRight: '6px' }}
+              />
               <input
                 type="text"
                 placeholder="Search by user name..."
@@ -334,7 +392,7 @@ export default function AdminDashboard() {
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredUsers.map((u) => (
+                  {currentUsers.map((u) => (
                     <tr key={u.id}>
                       <td>
                         <img
@@ -350,12 +408,13 @@ export default function AdminDashboard() {
                           className="edit-btn"
                           onClick={() => openEditModal(u)}
                         >
-                          <FaEdit /> Edit
+                          <FaEdit style={{ marginRight: '4px' }} />
+                          Edit
                         </button>
                       </td>
                     </tr>
                   ))}
-                  {filteredUsers.length === 0 && (
+                  {currentUsers.length === 0 && (
                     <tr>
                       <td colSpan="4" className="no-data">
                         No users found.
@@ -366,6 +425,40 @@ export default function AdminDashboard() {
               </table>
             </div>
 
+            {/* Pagination Controls */}
+            {filteredUsers.length > usersPerPage && (
+              <div className="pagination-container">
+                <button
+                  className="pagination-btn"
+                  onClick={() => handlePageChange(currentPage - 1)}
+                  disabled={currentPage === 1}
+                >
+                  &laquo; Prev
+                </button>
+                {[...Array(totalPages)].map((_, idx) => {
+                  const pageNum = idx + 1;
+                  return (
+                    <button
+                      key={pageNum}
+                      className={`pagination-btn ${
+                        pageNum === currentPage ? 'active' : ''
+                      }`}
+                      onClick={() => handlePageChange(pageNum)}
+                    >
+                      {pageNum}
+                    </button>
+                  );
+                })}
+                <button
+                  className="pagination-btn"
+                  onClick={() => handlePageChange(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                >
+                  Next &raquo;
+                </button>
+              </div>
+            )}
+
             {/* ── Edit User Modal ─────────────────────────────────────────────── */}
             {showEditModal && (
               <div className="modal-overlay" onClick={closeEditModal}>
@@ -375,11 +468,17 @@ export default function AdminDashboard() {
                 >
                   <div className="modal-header">
                     <h3>Edit User</h3>
-                    <button className="close-modal-btn" onClick={closeEditModal}>
+                    <button
+                      className="close-modal-btn"
+                      onClick={closeEditModal}
+                    >
                       <FaTimes />
                     </button>
                   </div>
-                  <form onSubmit={handleEditSubmit} className="edit-form">
+                  <form
+                    onSubmit={handleEditSubmit}
+                    className="edit-form"
+                  >
                     <div className="form-group">
                       <label>Name</label>
                       <input
@@ -421,7 +520,9 @@ export default function AdminDashboard() {
                           <button
                             type="button"
                             className="upload-avatar-btn"
-                            onClick={() => fileInputRef.current.click()}
+                            onClick={() =>
+                              fileInputRef.current.click()
+                            }
                           >
                             {uploading ? 'Uploading…' : 'Upload Avatar'}
                           </button>
@@ -464,7 +565,21 @@ export default function AdminDashboard() {
                     <tr>
                       <th>#</th>
                       <th>Model ID</th>
-                      <th>Downloads</th>
+                      <th
+                        className="sortable-header"
+                        onClick={toggleModelSort}
+                      >
+                        Downloads{'   '}
+                        {modelsSortAsc ? (
+                          <FaSortAmountUp
+                            style={{ verticalAlign: 'middle', marginLeft: '5px' }}
+                          />
+                        ) : (
+                          <FaSortAmountDown
+                            style={{ verticalAlign: 'middle', marginLeft: '5px'  }}
+                          />
+                        )}
+                      </th>
                     </tr>
                   </thead>
                   <tbody>

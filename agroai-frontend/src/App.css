@@ -754,14 +754,27 @@ input, table {
 }
 
 
-/* --------------------------- ADMIN DASHBOARD ------------------------------- */
+/* -------------------- GLOBAL SETTINGS ---------------------- */
+body {
+  margin: 0;
+  padding: 0;
+  background: rgb(1,41,51);
+  color: #fff;
+  font-family: Arial, sans-serif;
+}
+h2, h3 {
+  font-family: 'Audiowide', sans-serif;
+  color: rgb(140,201,64);
+}
+
+/* -------------------- ADMIN DASHBOARD ---------------------- */
 .admin-dashboard {
   display: flex;
   height: 100vh;
   overflow: hidden;
 }
 
-/* ---- Top Bar ---- */
+/* ─── Top Bar ───────────────────────────────────────────────── */
 .topbar {
   position: fixed;
   top: 0; left: 0; right: 0;
@@ -821,7 +834,7 @@ input, table {
   background: rgba(140,201,64,0.2);
 }
 
-/* ---- Sidebar ---- */
+/* ─── Sidebar ───────────────────────────────────────────────── */
 .sidebar {
   position: fixed;
   top: 60px;  /* below topbar */
@@ -860,6 +873,7 @@ input, table {
   padding: 14px 20px;
   color: #fff;
   cursor: pointer;
+  transition: background 0.2s, color 0.2s;
 }
 .sidebar-item.active,
 .sidebar-item:hover {
@@ -867,20 +881,20 @@ input, table {
   color: rgb(1,41,51);
 }
 
-/* ---- Main Content Area ---- */
+/* ─── Main Content Area ───────────────────────────────────────── */
 .main-content {
   margin-top: 60px;         /* below topbar */
-  margin-left: 0;           /* will shift if sidebar open */
+  margin-left: 0;           /* shifts if sidebar open */
   flex: 1;
   padding: 20px;
-  overflow: auto;
+  overflow-y: auto;
   transition: margin-left 0.3s ease;
 }
 .sidebar.open ~ .main-content {
-  margin-left: 240px;      /* push contents when sidebar is open */
+  margin-left: 240px;      /* push content right when sidebar is open */
 }
 
-/* ---- SEARCH & TABLE (Users) ---- */
+/* ─── SEARCH & USERS TABLE ─────────────────────────────────────────── */
 .search-bar {
   display: flex;
   align-items: center;
@@ -943,7 +957,7 @@ input, table {
   color: rgba(255,255,255,0.7);
 }
 
-/* ---- EDIT USER MODAL ---- */
+/* ─── EDIT USER MODAL ────────────────────────────────────────────────── */
 .modal-overlay {
   position: fixed;
   top: 0; left: 0; right: 0; bottom: 0;
@@ -1051,7 +1065,7 @@ input, table {
   cursor: pointer;
 }
 
-/* ---- MODELS TABLE ---- */
+/* ─── TOP AI MODELS TABLE ──────────────────────────────────────────────── */
 .models-container {
   background: rgba(0,0,0,0.2);
   border-radius: 6px;
@@ -1070,4 +1084,46 @@ input, table {
 }
 .models-table th {
   background: rgba(140,201,64,0.1);
+  cursor: pointer;
 }
+.sortable-header {
+  display: flex;
+  align-items: center;
+}
+
+/* Pagination container below the users table */
+.pagination-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 16px;
+  gap: 8px;
+}
+
+.pagination-btn {
+  background: transparent;
+  color: rgb(140,201,64);
+  border: 1px solid rgb(140,201,64);
+  padding: 6px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: background 0.2s, color 0.2s;
+}
+
+.pagination-btn:hover:not(:disabled) {
+  background: rgb(140,201,64);
+  color: rgb(1,41,51);
+}
+
+.pagination-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.pagination-btn.active {
+  background: rgb(140,201,64);
+  color: rgb(1,41,51);
+}
+
+
