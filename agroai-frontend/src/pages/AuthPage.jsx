@@ -184,7 +184,12 @@ export default function AuthPage() {
         resetAll();
       } else {
         // On successful login, go to /home
-        navigate('/home');
+        if(res.data.role === 'regular'){
+          navigate('/home');
+        }else{
+          navigate('/dashboard');
+        }
+        
       }
     } catch (err) {
       const msg =

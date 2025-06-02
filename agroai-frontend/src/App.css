@@ -733,3 +733,341 @@ button[type="submit"]:hover { opacity:0.9; }
 body::-webkit-scrollbar {
   display: none;
 }
+
+/* ----------------- GLOBALS (if not already in App.css) -------------------- */
+body {
+  font-family: Arial, sans-serif;
+  background: rgb(1,41,51);
+  color: #fff;
+  margin: 0;
+  padding: 0;
+}
+h2, h3 {
+  font-family: 'Audiowide', sans-serif;
+  color: rgb(140,201,64);
+}
+button {
+  font-family: 'Audiowide', sans-serif;
+}
+input, table {
+  font-family: Arial, sans-serif;
+}
+
+
+/* --------------------------- ADMIN DASHBOARD ------------------------------- */
+.admin-dashboard {
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* ---- Top Bar ---- */
+.topbar {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: 60px;
+  background: rgba(0, 0, 0, 0.3);
+  display: flex;
+  align-items: center;
+  padding: 0 20px;
+  z-index: 100;
+}
+.hamburger-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+.topbar-title {
+  flex: 1;
+  text-align: center;
+}
+.user-info-dropdown {
+  position: relative;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+}
+.user-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  margin-right: 8px;
+  object-fit: cover;
+}
+.user-name {
+  color: #fff;
+}
+.user-dropdown-menu {
+  position: absolute;
+  top: 48px;
+  right: 0;
+  background: rgba(0,0,0,0.8);
+  border: 1px solid rgb(140,201,64);
+  border-radius: 4px;
+  min-width: 140px;
+  padding: 4px 0;
+}
+.dropdown-item {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  background: none;
+  border: none;
+  color: #fff;
+  padding: 8px 12px;
+  cursor: pointer;
+}
+.dropdown-item:hover {
+  background: rgba(140,201,64,0.2);
+}
+
+/* ---- Sidebar ---- */
+.sidebar {
+  position: fixed;
+  top: 60px;  /* below topbar */
+  bottom: 0;
+  width: 240px;
+  background: rgb(1,41,51);
+  border-right: 1px solid rgb(140,201,64);
+  overflow: auto;
+  transition: transform 0.3s ease;
+}
+.sidebar.closed {
+  transform: translateX(-100%);
+}
+.sidebar.open {
+  transform: translateX(0);
+}
+.sidebar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+}
+.sidebar-close-btn {
+  background: none;
+  border: none;
+  color: #fff;
+  font-size: 20px;
+  cursor: pointer;
+}
+.sidebar-menu {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.sidebar-item {
+  padding: 14px 20px;
+  color: #fff;
+  cursor: pointer;
+}
+.sidebar-item.active,
+.sidebar-item:hover {
+  background: rgb(140,201,64);
+  color: rgb(1,41,51);
+}
+
+/* ---- Main Content Area ---- */
+.main-content {
+  margin-top: 60px;         /* below topbar */
+  margin-left: 0;           /* will shift if sidebar open */
+  flex: 1;
+  padding: 20px;
+  overflow: auto;
+  transition: margin-left 0.3s ease;
+}
+.sidebar.open ~ .main-content {
+  margin-left: 240px;      /* push contents when sidebar is open */
+}
+
+/* ---- SEARCH & TABLE (Users) ---- */
+.search-bar {
+  display: flex;
+  align-items: center;
+  margin-bottom: 12px;
+}
+.search-input {
+  flex: 1;
+  background: transparent;
+  border: 1px solid rgb(140,201,64);
+  border-radius: 4px;
+  color: #fff;
+  padding: 8px 12px;
+}
+.search-input::placeholder {
+  color: rgba(140,201,64,0.7);
+}
+.table-container {
+  background: rgba(0,0,0,0.2);
+  border-radius: 6px;
+  overflow-x: auto;
+}
+.users-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 600px;
+}
+.users-table th,
+.users-table td {
+  padding: 12px 16px;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+  text-align: left;
+  vertical-align: middle;
+}
+.users-table th {
+  background: rgba(140,201,64,0.1);
+}
+.table-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+.edit-btn {
+  background: rgb(140,201,64);
+  color: rgb(1,41,51);
+  border: none;
+  padding: 6px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  font-size: 0.9rem;
+}
+.edit-btn svg {
+  margin-right: 4px;
+}
+.no-data {
+  text-align: center;
+  padding: 20px 0;
+  color: rgba(255,255,255,0.7);
+}
+
+/* ---- EDIT USER MODAL ---- */
+.modal-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+}
+.modal-content {
+  background: rgb(1,41,51);
+  border: 1px solid rgb(140,201,64);
+  border-radius: 8px;
+  width: 400px;
+  max-width: 90%;
+  padding: 20px;
+  position: relative;
+}
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.close-modal-btn {
+  background: none;
+  border: none;
+  color: #fff;
+  font-size: 20px;
+  cursor: pointer;
+}
+.edit-form .form-group {
+  margin-bottom: 16px;
+}
+.edit-form label {
+  display: block;
+  margin-bottom: 6px;
+  color: rgb(140,201,64);
+}
+.edit-form input {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid rgb(140,201,64);
+  border-radius: 4px;
+  background: transparent;
+  color: #fff;
+}
+.avatar-upload-section {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.avatar-preview-wrapper {
+  position: relative;
+}
+.avatar-preview {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid rgb(140,201,64);
+}
+.remove-avatar-btn {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  background: rgb(255, 50, 50);
+  border: none;
+  color: #fff;
+  border-radius: 50%;
+  width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+.upload-avatar-btn {
+  background: rgb(140,201,64);
+  color: rgb(1,41,51);
+  border: none;
+  padding: 6px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 20px;
+}
+.save-btn {
+  background: rgb(140,201,64);
+  color: rgb(1,41,51);
+  border: none;
+  padding: 8px 14px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.cancel-btn {
+  background: transparent;
+  border: 1px solid rgb(140,201,64);
+  color: rgb(140,201,64);
+  padding: 8px 14px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+/* ---- MODELS TABLE ---- */
+.models-container {
+  background: rgba(0,0,0,0.2);
+  border-radius: 6px;
+  padding: 20px;
+  overflow-x: auto;
+}
+.models-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.models-table th,
+.models-table td {
+  padding: 12px 16px;
+  text-align: left;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+.models-table th {
+  background: rgba(140,201,64,0.1);
+}
