@@ -11,6 +11,7 @@ import {
   FaSortAmountUp
 } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
+import Breadcrumbs from '../components/Breadcrumbs';
 
 
 export default function AdminDashboard() {
@@ -290,13 +291,18 @@ export default function AdminDashboard() {
  
   return (
     <div className="admin-dashboard">
-
-      <div className="topbar">
+      <div className="topbar" style={{height:"100px", marginBottom:"300px"}}>
         <button className="hamburger-btn" onClick={toggleSidebar}>
           <FaBars size={20} color="rgb(140,201,64)" />
         </button>
         <div className="topbar-title">
-          <h2>
+          <Breadcrumbs 
+            items={[
+              { label: 'AdminDashboard' }, 
+              { label: menuSel === 'users' ? 'Users' : 'Top AI Models' }
+            ]}
+          />
+          <h2 style={{ marginLeft:"130px"}}>
             {menuSel === 'users' ? 'Manage Users' : 'Top AI Models'}
           </h2>
         </div>
@@ -326,8 +332,8 @@ export default function AdminDashboard() {
         </div>
       </div>
 
- 
-      <div className={`sidebar ${sidebarOpen ? 'open' : 'closed'}`}>
+
+      <div className={`sidebar ${sidebarOpen ? 'open' : 'closed'}`} style={{marginTop:"40px"}}>
         <div className="sidebar-header">
           <h3>Admin Menu</h3>
           <button className="sidebar-close-btn" onClick={toggleSidebar}>
@@ -356,7 +362,7 @@ export default function AdminDashboard() {
       </div>
 
  
-      <div className="main-content">
+      <div className="main-content" style={{marginTop:"100px"}}>
         {menuSel === 'users' ? (
           <>
             {/* Search Bar */}

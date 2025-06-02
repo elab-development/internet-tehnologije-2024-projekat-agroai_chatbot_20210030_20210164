@@ -10,6 +10,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import Breadcrumbs from '../components/Breadcrumbs';
 
 export default function Chat() {
   const navigate = useNavigate();
@@ -175,6 +176,12 @@ export default function Chat() {
 
   return (
     <div className="chat-page">
+      <Breadcrumbs 
+        items={[
+          { label: 'Home',     to: '/home' }, 
+          { label: 'Chats' }
+        ]}
+      />
       <div className="chat-topbar">
         <button
           className="hamburger-btn"

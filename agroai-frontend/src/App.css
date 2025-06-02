@@ -1138,3 +1138,37 @@ h2, h3 {
   opacity: 0.8;
 }
 
+/* Container */
+.breadcrumbs {
+  display: flex;
+  align-items: center;
+  font-size: 14px;
+  margin-bottom: 16px;
+}
+
+/* Each item wrapper */
+.breadcrumb-item {
+  display: flex;
+  align-items: center;
+}
+
+/* Clickable link (only “Home” on Chats.jsx) */
+.breadcrumb-link {
+  color: rgb(140, 201, 64);
+  text-decoration: none;
+}
+
+.breadcrumb-link:hover {
+  text-decoration: underline;
+}
+
+/* Non-clickable text (e.g. “Chats”, “AdminDashboard”, “Users”, “Top AI Models”) */
+.breadcrumb-text {
+  color: rgb(140, 201, 64);
+}
+
+/* Separator “>” */
+.breadcrumb-sep {
+  margin: 0 8px;
+  color: rgb(140, 201, 64);
+}
