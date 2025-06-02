@@ -239,13 +239,13 @@ export default function Chat() {
       </div>
 
       <div className={`chat-sidebar ${sidebarOpen ? 'open' : 'closed'}`}>
-        <div className="sidebar-header">
+        <div className="sidebar-header" >
           <h3>My Chats</h3>
           <button className="sidebar-close-btn" onClick={toggleSidebar}>
             ×
           </button>
         </div>
-        <button className="new-chat-btn" onClick={handleNewChat}>
+        <button className="new-chat-btn" onClick={handleNewChat} style={{ marginTop:"50px"}}>
           <FaPlus style={{ marginRight: '8px' }} /> New Chat
         </button>
         <ul className="chat-list">
