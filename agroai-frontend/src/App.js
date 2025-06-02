@@ -10,11 +10,6 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route
-          path="/auth"
-          element={!token ? <AuthPage /> : <Navigate to="/chats" replace />}
-        />
-        {/* Dodajte svoje zaštićene rute ovde, npr. /chats */}
         <Route path="/" element={<AuthPage/>} />
         <Route path="/home" element={token ? <Home/> : <Navigate to="/auth" replace />} />
         <Route path="/dashboard" element={token ? <AdminDashboard/> : <Navigate to="/auth" replace />} />

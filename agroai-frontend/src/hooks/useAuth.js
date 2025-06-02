@@ -1,20 +1,10 @@
 import { useState } from 'react';
 import axios from 'axios';
 
-/**
- * useAuth:
- *   - submitAuth(mode, payload) will POST to /api/login or /api/register.
- *   - On success, writes token + user data into sessionStorage.
- *   - On failure, sets `error`.
- */
 export default function useAuth() {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  /**
-   * mode: 'login' or 'register'
-   * payload: { name?, email, password, password_confirmation?, image_url?, role }
-   */
   const submitAuth = async (mode, payload) => {
     setError('');
     setIsLoading(true);
@@ -34,8 +24,7 @@ export default function useAuth() {
       if (!token) {
         throw new Error('No token returned from server.');
       }
-
-      // Store in sessionStorage
+      
       sessionStorage.setItem('token', token);
       sessionStorage.setItem('userId', data.id);
       sessionStorage.setItem('userName', data.name);

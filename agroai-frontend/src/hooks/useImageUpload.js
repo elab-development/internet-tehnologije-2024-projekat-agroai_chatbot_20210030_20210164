@@ -6,10 +6,6 @@ export default function useImageUpload() {
   const [uploadError, setUploadError] = useState('');
   const [uploading, setUploading] = useState(false);
 
-  /**
-   * Accepts a File object. Converts to Base64, posts to ImgBB,
-   * and on success calls setImageUrl(...) with the returned display_url.
-   */
   const onFileSelect = (file) => {
     if (!file) return;
 
@@ -19,12 +15,12 @@ export default function useImageUpload() {
     const reader = new FileReader();
     reader.onloadend = async () => {
       try {
-        const fullDataUrl = reader.result; // "data:image/png;base64,AAAA..."
+        const fullDataUrl = reader.result; 
         const base64only = fullDataUrl.split(',')[1];
 
         const formData = new FormData();
         formData.append('image', base64only);
-        formData.append('expiration', '600'); // auto-delete after 600s
+        formData.append('expiration', '600'); 
 
         const imgbbKey = process.env.REACT_APP_IMGBB_API_KEY;
         if (!imgbbKey) {
@@ -61,9 +57,6 @@ export default function useImageUpload() {
     reader.readAsDataURL(file);
   };
 
-  /**
-   * Clears out the stored image URL and any errors.
-   */
   const removeImage = () => {
     setImageUrl('');
     setUploadError('');
