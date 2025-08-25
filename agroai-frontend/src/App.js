@@ -7,12 +7,12 @@ import Chat from './pages/Chat';
 import './App.css';
 
 function App() {
-  const [token, setToken] = useState(localStorage.getItem('token'));
+  const [token, setToken] = useState(sessionStorage.getItem('token'));
 
   useEffect(() => {
-    // check localStorage every second
+    // check sessionStorage every second
     const interval = setInterval(() => {
-      const newToken = localStorage.getItem('token');
+      const newToken = sessionStorage.getItem('token');
       setToken(newToken);
     }, 1000);
 

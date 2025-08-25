@@ -97,6 +97,8 @@ export default function AuthPage() {
         setMode('login');
         resetAll();
       } else {
+
+        console.log(userData.role);
  
         if (userData.role === 'regular') {
             window.location.replace("/home");
