@@ -70,3 +70,29 @@ Seed-ovi mogu automatski popuniti **avatar slike korisnika** korišćenjem **Pex
 ## Šta dobijate
 
 Agro AI spaja **AI razgovor** i **administrativni nadzor** u jednoj aplikaciji spremnoj za dalji razvoj (npr. agro preporuke, sezonski saveti, IoT integracije). Struktura je jasna (React klijent + Laravel server), pa je dodavanje novih ekrana i API endpoint-a jednostavno.
+
+
+---
+Instalacija i pokretanje
+---------------------------
+
+1. Klonirajte repozitorijum:
+```bash
+    git clone https://github.com/elab-development/internet-tehnologije-2024-projekat-agroai_chatbot_20210030_20210164.git
+```
+2. Pokrenite backend:
+```bash
+   cd agroai-backend
+   composer install
+   php artisan migrate:fresh --seed
+   php artisan serve
+```
+    
+3. Pokrenite frontend:
+```bash
+   cd agroai-frontend
+   npm install
+   npm start
+```
+    
+4.  Frontend pokrenut na: [http://localhost:3000](http://localhost:3000) Backend API pokrenut na: [http://127.0.0.1:8000/api](http://127.0.0.1:8000/api)
