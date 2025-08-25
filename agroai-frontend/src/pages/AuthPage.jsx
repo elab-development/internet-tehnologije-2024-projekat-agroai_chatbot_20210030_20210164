@@ -99,9 +99,9 @@ export default function AuthPage() {
       } else {
  
         if (userData.role === 'regular') {
-          navigate('/home');
+            window.location.replace("/home");
         } else {
-          navigate('/dashboard');
+          window.location.replace('/dashboard');
         }
       }
     } catch (_) {
