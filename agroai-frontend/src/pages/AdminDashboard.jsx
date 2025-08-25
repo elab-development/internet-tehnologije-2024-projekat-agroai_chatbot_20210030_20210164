@@ -13,6 +13,12 @@ import {
 import { useNavigate } from 'react-router-dom';
 import Breadcrumbs from '../components/Breadcrumbs';
 
+// NEW: Recharts imports
+import {
+  ResponsiveContainer,
+  BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, Legend,
+  PieChart, Pie, Cell
+} from 'recharts';
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
@@ -47,6 +53,11 @@ export default function AdminDashboard() {
   const [usersNameSortAsc, setUsersNameSortAsc] = useState(true);
   const toggleUsersNameSort = () => setUsersNameSortAsc((p) => !p);
 
+  // NEW: stats state for "User Graphs" tab
+  const [stats, setStats] = useState(null);
+  const [loadingStats, setLoadingStats] = useState(false);
+  const [statsError, setStatsError] = useState(null);
+
   useEffect(() => {
     const token = sessionStorage.getItem('token');
     if (!token) {
@@ -72,7 +83,6 @@ export default function AdminDashboard() {
   
   }, []);
 
-
   const fetchUsers = async () => {
     const token = sessionStorage.getItem('token');
     try {
@@ -91,19 +101,17 @@ export default function AdminDashboard() {
     } catch (err) {
       console.error('Error fetching users:', err);
       if (err.response && err.response.status === 403) {
-  
         sessionStorage.clear();
         navigate('/');
       }
     }
   };
 
-
   useEffect(() => {
     const term = searchTerm.trim().toLowerCase();
     let list = !term ? users : users.filter((u) => u.name.toLowerCase().includes(term));
 
-    // NEW: apply name sorting
+    // apply name sorting
     list = [...list].sort((a, b) =>
       usersNameSortAsc
         ? a.name.localeCompare(b.name)
@@ -114,12 +122,10 @@ export default function AdminDashboard() {
     setCurrentPage(1); 
   }, [searchTerm, users, usersNameSortAsc]);
 
-  
   const toggleSidebar = () => {
     setSidebarOpen((prev) => !prev);
   };
 
-  
   const handleLogout = async () => {
     const token = sessionStorage.getItem('token');
     try {
@@ -133,13 +139,10 @@ export default function AdminDashboard() {
           }
         }
       );
-    } catch (_) {
-
-    }
+    } catch (_) {}
     sessionStorage.clear();
     navigate('/');
   };
-
 
   const openEditModal = (user) => {
     setEditForm({
@@ -155,13 +158,11 @@ export default function AdminDashboard() {
     setEditForm({ id: '', name: '', email: '', image_url: '' });
   };
 
-
   const handleEditChange = (e) => {
     const { name, value } = e.target;
     setEditForm((f) => ({ ...f, [name]: value }));
   };
 
- 
   const handleAvatarSelect = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -195,11 +196,9 @@ export default function AdminDashboard() {
     reader.readAsDataURL(file);
   };
 
-
   const handleRemoveAvatar = () => {
     setEditForm((f) => ({ ...f, image_url: '' }));
   };
-
 
   const handleEditSubmit = async (e) => {
     e.preventDefault();
@@ -228,18 +227,18 @@ export default function AdminDashboard() {
     }
   };
 
-
   useEffect(() => {
     if (menuSel === 'models') {
       fetchTopModels();
     }
- 
+    if (menuSel === 'graphs') {
+      fetchUserStats();
+    }
   }, [menuSel]);
 
   const fetchTopModels = async () => {
     setLoadingModels(true);
     try {
- 
       const res = await axios.get(
         'https://huggingface.co/api/models?sort=downloads'
       );
@@ -260,6 +259,27 @@ export default function AdminDashboard() {
     }
   };
 
+  // NEW: fetch user statistics for graphs tab
+  const fetchUserStats = async () => {
+    setLoadingStats(true);
+    setStatsError(null);
+    const token = sessionStorage.getItem('token');
+    try {
+      const res = await axios.get('http://127.0.0.1:8000/api/users/statistics', {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: 'application/json'
+        }
+      });
+      setStats(res.data.data || null);
+    } catch (err) {
+      console.error('Error fetching user statistics:', err);
+      setStats(null);
+      setStatsError('Failed to load statistics.');
+    } finally {
+      setLoadingStats(false);
+    }
+  };
 
   const toggleModelSort = () => {
     const asc = !modelsSortAsc;
@@ -271,7 +291,6 @@ export default function AdminDashboard() {
     setModels(sorted);
     setModelsSortAsc(asc);
   };
-
 
   const totalPages = Math.ceil(filteredUsers.length / usersPerPage);
 
@@ -293,7 +312,28 @@ export default function AdminDashboard() {
     indexOfLastUser
   );
 
- 
+  // ---------- Recharts data transforms ----------
+  const roleData = stats ? [
+    { name: 'Regular', value: stats.totals?.regular_users ?? 0 },
+    { name: 'Admin',   value: stats.totals?.administrators ?? 0 }
+  ] : [];
+
+  const topUsersData = stats?.top_users_by_chats || [];
+
+  const kpi = stats ? [
+    { label: 'Users', value: stats.totals.users },
+    { label: 'Chats', value: stats.totals.chats },
+    { label: 'Messages', value: stats.totals.messages },
+    { label: 'Users w/ Chat', value: stats.derived.users_with_at_least_one_chat },
+    { label: 'Avg Chats/User', value: stats.derived.avg_chats_per_user },
+    { label: 'Avg Msgs/Chat', value: stats.derived.avg_messages_per_chat },
+    { label: 'New (7d)', value: stats.derived.new_users_last_7_days },
+  ] : [];
+
+  const COLORS = ['#8CC940', '#2E7D32', '#66BB6A', '#43A047', '#558B2F'];
+
+  // ------------------------------------------------
+
   return (
     <div className="admin-dashboard">
       <div className="topbar" style={{height:"100px", marginBottom:"300px"}}>
@@ -304,11 +344,11 @@ export default function AdminDashboard() {
           <Breadcrumbs 
             items={[
               { label: 'AdminDashboard' }, 
-              { label: menuSel === 'users' ? 'Users' : 'Top AI Models' }
+              { label: menuSel === 'users' ? 'Users' : menuSel === 'models' ? 'Top AI Models' : 'User Graphs' }
             ]}
           />
           <h2 style={{ marginLeft:"130px"}}>
-            {menuSel === 'users' ? 'Manage Users' : 'Top AI Models'}
+            {menuSel === 'users' ? 'Manage Users' : menuSel === 'models' ? 'Top AI Models' : 'User Graphs'}
           </h2>
         </div>
         <div
@@ -337,7 +377,6 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-
       <div className={`sidebar ${sidebarOpen ? 'open' : 'closed'}`} style={{marginTop:"40px"}}>
         <div className="sidebar-header">
           <h3>Admin Menu</h3>
@@ -348,25 +387,27 @@ export default function AdminDashboard() {
 
         <ul className="sidebar-menu">
           <li
-            className={`sidebar-item ${
-              menuSel === 'users' ? 'active' : ''
-            }`}
+            className={`sidebar-item ${menuSel === 'users' ? 'active' : ''}`}
             onClick={() => setMenuSel('users')}
           >
             Users
           </li>
           <li
-            className={`sidebar-item ${
-              menuSel === 'models' ? 'active' : ''
-            }`}
+            className={`sidebar-item ${menuSel === 'models' ? 'active' : ''}`}
             onClick={() => setMenuSel('models')}
           >
             Top AI Models
           </li>
+          {/* NEW: User Graphs tab */}
+          <li
+            className={`sidebar-item ${menuSel === 'graphs' ? 'active' : ''}`}
+            onClick={() => setMenuSel('graphs')}
+          >
+            User Graphs
+          </li>
         </ul>
       </div>
 
- 
       <div className="main-content" style={{marginTop:"100px"}}>
         {menuSel === 'users' ? (
           <>
@@ -384,7 +425,6 @@ export default function AdminDashboard() {
                 className="search-input"
               />
             </div>
-
 
             <div className="table-container">
               <table className="users-table">
@@ -441,7 +481,6 @@ export default function AdminDashboard() {
               </table>
             </div>
 
-
             {filteredUsers.length > usersPerPage && (
               <div className="pagination-container">
                 <button
@@ -456,9 +495,7 @@ export default function AdminDashboard() {
                   return (
                     <button
                       key={pageNum}
-                      className={`pagination-btn ${
-                        pageNum === currentPage ? 'active' : ''
-                      }`}
+                      className={`pagination-btn ${pageNum === currentPage ? 'active' : ''}`}
                       onClick={() => handlePageChange(pageNum)}
                     >
                       {pageNum}
@@ -475,7 +512,6 @@ export default function AdminDashboard() {
               </div>
             )}
 
- 
             {showEditModal && (
               <div className="modal-overlay" onClick={closeEditModal}>
                 <div
@@ -491,10 +527,7 @@ export default function AdminDashboard() {
                       <FaTimes />
                     </button>
                   </div>
-                  <form
-                    onSubmit={handleEditSubmit}
-                    className="edit-form"
-                  >
+                  <form onSubmit={handleEditSubmit} className="edit-form">
                     <div className="form-group">
                       <label>Name</label>
                       <input
@@ -536,9 +569,7 @@ export default function AdminDashboard() {
                           <button
                             type="button"
                             className="upload-avatar-btn"
-                            onClick={() =>
-                              fileInputRef.current.click()
-                            }
+                            onClick={() => fileInputRef.current.click()}
                           >
                             {uploading ? 'Uploading…' : 'Upload Avatar'}
                           </button>
@@ -556,11 +587,7 @@ export default function AdminDashboard() {
                       <button type="submit" className="save-btn">
                         Save Changes
                       </button>
-                      <button
-                        type="button"
-                        className="cancel-btn"
-                        onClick={closeEditModal}
-                      >
+                      <button type="button" className="cancel-btn" onClick={closeEditModal}>
                         Cancel
                       </button>
                     </div>
@@ -569,9 +596,8 @@ export default function AdminDashboard() {
               </div>
             )}
           </>
-        ) : (
+        ) : menuSel === 'models' ? (
           <>
-   
             <div className="models-container">
               {loadingModels ? (
                 <p>Loading top AI models…</p>
@@ -581,19 +607,12 @@ export default function AdminDashboard() {
                     <tr>
                       <th>#</th>
                       <th>Model ID</th>
-                      <th
-                        className="sortable-header"
-                        onClick={toggleModelSort}
-                      >
+                      <th className="sortable-header" onClick={toggleModelSort}>
                         Downloads{'   '}
                         {modelsSortAsc ? (
-                          <FaSortAmountUp
-                            style={{ verticalAlign: 'middle', marginLeft: '5px' }}
-                          />
+                          <FaSortAmountUp style={{ verticalAlign: 'middle', marginLeft: '5px' }} />
                         ) : (
-                          <FaSortAmountDown
-                            style={{ verticalAlign: 'middle', marginLeft: '5px'  }}
-                          />
+                          <FaSortAmountDown style={{ verticalAlign: 'middle', marginLeft: '5px'  }} />
                         )}
                       </th>
                     </tr>
@@ -618,6 +637,61 @@ export default function AdminDashboard() {
               )}
             </div>
           </>
+        ) : (
+          // ---------- User Graphs tab ----------
+          <div className="graphs-container">
+            {loadingStats ? (
+              <p>Loading user statistics…</p>
+            ) : statsError ? (
+              <p style={{ color: 'tomato' }}>{statsError}</p>
+            ) : !stats ? (
+              <p>No statistics available.</p>
+            ) : (
+              <>
+                {/* KPI row */}
+                <div className="kpi-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 16, marginBottom: 24 }}>
+                  {kpi.map((x) => (
+                    <div key={x.label} className="kpi-card" style={{ background: '#0f3133', padding: 16, borderRadius: 12, textAlign: 'center', border: '1px solid rgba(255,255,255,0.08)' }}>
+                      <div style={{ opacity: 0.8 }}>{x.label}</div>
+                      <div style={{ fontSize: 22, fontWeight: 700 }}>{x.value}</div>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="charts-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
+                  {/* Roles Pie */}
+                  <div className="card" style={{ background: '#0f3133', padding: 16, borderRadius: 12, border: '1px solid rgba(255,255,255,0.08)' }}>
+                    <h3 style={{ marginBottom: 12 }}>Users by Role</h3>
+                    <ResponsiveContainer width="100%" height={300}>
+                      <PieChart>
+                        <Pie data={roleData} dataKey="value" nameKey="name" outerRadius={110} label>
+                          {roleData.map((entry, idx) => (
+                            <Cell key={`cell-${idx}`} fill={COLORS[idx % COLORS.length]} />
+                          ))}
+                        </Pie>
+                        <Legend />
+                        <Tooltip />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+
+                  {/* Top users by chats */}
+                  <div className="card" style={{ background: '#0f3133', padding: 16, borderRadius: 12, border: '1px solid rgba(255,255,255,0.08)' }}>
+                    <h3 style={{ marginBottom: 12 }}>Top Users by Chats</h3>
+                    <ResponsiveContainer width="100%" height={300}>
+                      <BarChart data={topUsersData}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="name" />
+                        <YAxis allowDecimals={false} />
+                        <Tooltip />
+                        <Bar dataKey="chats_count" fill="#8CC940" />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
         )}
       </div>
     </div>
