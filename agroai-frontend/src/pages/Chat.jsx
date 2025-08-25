@@ -7,6 +7,7 @@ import {
   FaPlus,
   FaPaperPlane
 } from 'react-icons/fa';
+import { FaEdit, FaTrash, FaVolumeUp, FaStop } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -16,13 +17,65 @@ export default function Chat() {
   const navigate = useNavigate();
   const messagesEndRef = useRef(null);
 
-  const [chats, setChats] = useState([]);           
+  const [chats, setChats] = useState([]);
   const [activeChat, setActiveChat] = useState(null);
-  const [messages, setMessages] = useState([]);    
+  const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [userInfo, setUserInfo] = useState({});     
-  const [menuOpen, setMenuOpen] = useState(false);  
+  const [userInfo, setUserInfo] = useState({});
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  // Text-to-Speech state
+  const [speakingKey, setSpeakingKey] = useState(null);
+  const utteranceRef = useRef(null);
+
+  const ttsSupported =
+    typeof window !== 'undefined' &&
+    'speechSynthesis' in window &&
+    'SpeechSynthesisUtterance' in window;
+
+  // Convert markdown-ish content to plain-ish text for TTS
+  const toPlainText = (md = '') =>
+    md
+      .replace(/```[\s\S]*?```/g, ' ')
+      .replace(/`[^`]*`/g, ' ')
+      .replace(/!\[[^\]]*]\([^)]+\)/g, ' ')
+      .replace(/\[[^\]]*]\([^)]+\)/g, ' ')
+      .replace(/[*_>#\-~]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+
+  const speak = (text, key) => {
+    if (!ttsSupported || !text) return;
+    if (window.speechSynthesis.speaking || window.speechSynthesis.pending) {
+      window.speechSynthesis.cancel();
+    }
+    const u = new window.SpeechSynthesisUtterance(toPlainText(text));
+    utteranceRef.current = u;
+    u.onend = () => {
+      setSpeakingKey(null);
+      utteranceRef.current = null;
+    };
+    u.onerror = () => {
+      setSpeakingKey(null);
+      utteranceRef.current = null;
+    };
+    setSpeakingKey(key);
+    window.speechSynthesis.speak(u);
+  };
+
+  const stopSpeaking = () => {
+    if (!ttsSupported) return;
+    window.speechSynthesis.cancel();
+    setSpeakingKey(null);
+    utteranceRef.current = null;
+  };
+
+  useEffect(() => {
+    return () => {
+      if (ttsSupported) window.speechSynthesis.cancel();
+    };
+  }, [ttsSupported]);
 
   useEffect(() => {
     const token = sessionStorage.getItem('token');
@@ -37,11 +90,11 @@ export default function Chat() {
     const userName = sessionStorage.getItem('userName');
     const userRole = sessionStorage.getItem('userRole');
     const storedUser = {
-        email: userEmail,
-        id: userId,
-        image_url: userImage,
-        name: userName,
-        role: userRole,
+      email: userEmail,
+      id: userId,
+      image_url: userImage,
+      name: userName,
+      role: userRole,
     };
     setUserInfo(storedUser);
 
@@ -142,6 +195,53 @@ export default function Chat() {
     }
   };
 
+  // Edit chat title
+  const handleEditChat = async (chat) => {
+    const token = sessionStorage.getItem('token');
+    const newTitle = window.prompt('Edit chat title:', chat.title);
+    if (!newTitle || newTitle.trim() === '' || newTitle === chat.title) return;
+    try {
+      const res = await axios.put(
+        `http://127.0.0.1:8000/api/chats/${chat.id}`,
+        { title: newTitle.trim() },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            Accept: 'application/json'
+          }
+        }
+      );
+      const updated = res.data.data;
+      setChats((prev) => prev.map((c) => (c.id === chat.id ? updated : c)));
+      setActiveChat((prev) => (prev && prev.id === chat.id ? updated : prev));
+    } catch (err) {
+      console.error('Error updating chat:', err);
+    }
+  };
+
+  // Delete chat
+  const handleDeleteChat = async (chatId) => {
+    const token = sessionStorage.getItem('token');
+    const confirmed = window.confirm('Are you sure you want to delete this chat?');
+    if (!confirmed) return;
+    try {
+      await axios.delete(`http://127.0.0.1:8000/api/chats/${chatId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: 'application/json'
+        }
+      });
+      setChats((prev) => prev.filter((c) => c.id !== chatId));
+      setActiveChat((prev) => {
+        if (!prev || prev.id !== chatId) return prev;
+        const remaining = chats.filter((c) => c.id !== chatId);
+        return remaining.length ? remaining[0] : null;
+      });
+    } catch (err) {
+      console.error('Error deleting chat:', err);
+    }
+  };
+
   const handleLogout = async () => {
     const token = sessionStorage.getItem('token');
     try {
@@ -155,8 +255,7 @@ export default function Chat() {
           }
         }
       );
-    } catch (_) {
-    }
+    } catch (_) {}
     sessionStorage.clear();
     navigate('/');
   };
@@ -174,11 +273,27 @@ export default function Chat() {
     setMenuOpen((prev) => !prev);
   };
 
+  // Shared style for the TTS button
+  const ttsBtnStyle = {
+    position: 'absolute',
+    bottom: 8,
+    right: 8,
+    backgroundColor: '#8CC940', // from your image
+    border: 'none',
+    width: 32,
+    height: 32,
+    borderRadius: '50%',
+    display: 'grid',
+    placeItems: 'center',
+    cursor: 'pointer',
+    boxShadow: '0 2px 6px rgba(0,0,0,0.2)'
+  };
+
   return (
     <div className="chat-page">
-      <Breadcrumbs 
+      <Breadcrumbs
         items={[
-          { label: 'Home',     to: '/home' }, 
+          { label: 'Home', to: '/home' },
           { label: 'Chats' }
         ]}
       />
@@ -239,13 +354,13 @@ export default function Chat() {
       </div>
 
       <div className={`chat-sidebar ${sidebarOpen ? 'open' : 'closed'}`}>
-        <div className="sidebar-header" >
+        <div className="sidebar-header">
           <h3>My Chats</h3>
           <button className="sidebar-close-btn" onClick={toggleSidebar}>
             ×
           </button>
         </div>
-        <button className="new-chat-btn" onClick={handleNewChat} style={{ marginTop:"50px"}}>
+        <button className="new-chat-btn" onClick={handleNewChat} style={{ marginTop: '50px' }}>
           <FaPlus style={{ marginRight: '8px' }} /> New Chat
         </button>
         <ul className="chat-list">
@@ -256,8 +371,37 @@ export default function Chat() {
                 activeChat && chat.id === activeChat.id ? 'active' : ''
               }`}
               onClick={() => selectChat(chat)}
+              style={{ display: 'flex', alignItems: 'center', gap: 8 }}
             >
-              {chat.title}
+              <span className="chat-list-title" style={{ flex: 1 }}>{chat.title}</span>
+
+              {/* Show buttons ONLY for the selected chat */}
+              {activeChat && activeChat.id === chat.id && (
+                <>
+                  <button
+                    className="chat-edit-btn"
+                    title="Edit chat title"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleEditChat(chat);
+                    }}
+                    style={{ background: 'transparent', border: 'none', cursor: 'pointer' }}
+                  >
+                    <FaEdit size={14} />
+                  </button>
+                  <button
+                    className="chat-delete-btn"
+                    title="Delete chat"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDeleteChat(chat.id);
+                    }}
+                    style={{ background: 'transparent', border: 'none', cursor: 'pointer' }}
+                  >
+                    <FaTrash size={14} />
+                  </button>
+                </>
+              )}
             </li>
           ))}
         </ul>
@@ -272,7 +416,12 @@ export default function Chat() {
           <>
             <div className="chat-messages-container">
               {messages.map((msg, idx) => {
+                // Case 1: message with paired response (user then AI)
                 if (msg.response) {
+                  const aiKey = `ai-${idx}`;
+                  const aiText = msg.response.content;
+                  const isSpeaking = speakingKey === aiKey;
+
                   return (
                     <div key={idx}>
                       <div className="message-row user">
@@ -283,9 +432,21 @@ export default function Chat() {
                         </div>
                       </div>
                       <div className="message-row ai">
-                        <div className="message-bubble ai-bubble">
+                        <div className="message-bubble ai-bubble" style={{ position: 'relative' }}>
+                          {/* TTS control */}
+                          {ttsSupported && (
+                            <button
+                              className="tts-btn"
+                              aria-label={isSpeaking ? 'Stop reading' : 'Read response aloud'}
+                              title={isSpeaking ? 'Stop' : 'Read aloud'}
+                              onClick={() => (isSpeaking ? stopSpeaking() : speak(aiText, aiKey))}
+                              style={ttsBtnStyle}
+                            >
+                              {isSpeaking ? <FaStop size={14} color="white" /> : <FaVolumeUp size={14} color="white" />}
+                            </button>
+                          )}
                           <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                            {msg.response.content}
+                            {aiText}
                           </ReactMarkdown>
                         </div>
                       </div>
@@ -293,7 +454,11 @@ export default function Chat() {
                   );
                 }
 
+                // Case 2: single message (could be assistant or user)
                 const isAI = msg.role === 'assistant';
+                const key = `m-${idx}`;
+                const isSpeaking = speakingKey === key;
+
                 return (
                   <div
                     key={idx}
@@ -303,7 +468,22 @@ export default function Chat() {
                       className={`message-bubble ${
                         isAI ? 'ai-bubble' : 'user-bubble'
                       }`}
+                      style={{ position: 'relative' }}
                     >
+                      {/* TTS only for AI messages */}
+                      {isAI && ttsSupported && (
+                        <button
+                          className="tts-btn"
+                          aria-label={isSpeaking ? 'Stop reading' : 'Read response aloud'}
+                          title={isSpeaking ? 'Stop' : 'Read aloud'}
+                          onClick={() =>
+                            isSpeaking ? stopSpeaking() : speak(msg.content, key)
+                          }
+                          style={ttsBtnStyle}
+                        >
+                          {isSpeaking ? <FaStop size={14} color="white" /> : <FaVolumeUp size={14} color="white" />}
+                        </button>
+                      )}
                       <ReactMarkdown remarkPlugins={[remarkGfm]}>
                         {msg.content}
                       </ReactMarkdown>
