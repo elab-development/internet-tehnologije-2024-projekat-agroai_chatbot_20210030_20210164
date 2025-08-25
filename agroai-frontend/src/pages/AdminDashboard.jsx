@@ -24,7 +24,6 @@ export default function AdminDashboard() {
   const [searchTerm, setSearchTerm] = useState('');
   const [filteredUsers, setFilteredUsers] = useState([]);
 
-  
   const [currentPage, setCurrentPage] = useState(1);
   const usersPerPage = 4; 
 
@@ -44,6 +43,9 @@ export default function AdminDashboard() {
   const [showUserDropdown, setShowUserDropdown] = useState(false);
   const fileInputRef = useRef();
 
+  // NEW: users sort state (by name)
+  const [usersNameSortAsc, setUsersNameSortAsc] = useState(true);
+  const toggleUsersNameSort = () => setUsersNameSortAsc((p) => !p);
 
   useEffect(() => {
     const token = sessionStorage.getItem('token');
@@ -99,15 +101,18 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     const term = searchTerm.trim().toLowerCase();
-    if (!term) {
-      setFilteredUsers(users);
-    } else {
-      setFilteredUsers(
-        users.filter((u) => u.name.toLowerCase().includes(term))
-      );
-    }
+    let list = !term ? users : users.filter((u) => u.name.toLowerCase().includes(term));
+
+    // NEW: apply name sorting
+    list = [...list].sort((a, b) =>
+      usersNameSortAsc
+        ? a.name.localeCompare(b.name)
+        : b.name.localeCompare(a.name)
+    );
+
+    setFilteredUsers(list);
     setCurrentPage(1); 
-  }, [searchTerm, users]);
+  }, [searchTerm, users, usersNameSortAsc]);
 
   
   const toggleSidebar = () => {
@@ -386,7 +391,18 @@ export default function AdminDashboard() {
                 <thead>
                   <tr>
                     <th>Avatar</th>
-                    <th>Name</th>
+                    <th
+                      className="sortable-header"
+                      onClick={toggleUsersNameSort}
+                      title="Sort by name"
+                    >
+                      Name{' '}
+                      {usersNameSortAsc ? (
+                        <FaSortAmountUp style={{ verticalAlign: 'middle', marginLeft: 6 }} />
+                      ) : (
+                        <FaSortAmountDown style={{ verticalAlign: 'middle', marginLeft: 6 }} />
+                      )}
+                    </th>
                     <th>Email</th>
                     <th>Actions</th>
                   </tr>
