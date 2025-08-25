@@ -25,6 +25,8 @@ Route::post('login',    [AuthController::class, 'login']);
 
 Route::middleware('auth:sanctum')->group(function () {
 
+    Route::get('users/statistics', [UserController::class, 'statistics']);
+
     // users resource (only index & show)
     Route::apiResource('users', UserController::class)
          ->only(['index', 'show', 'update']);
