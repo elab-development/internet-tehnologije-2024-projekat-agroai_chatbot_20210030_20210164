@@ -20,6 +20,9 @@ import {
   PieChart, Pie, Cell
 } from 'recharts';
 
+// NEW: Latest AI News component (no key needed)
+import AINews from '../components/AINews';
+
 export default function AdminDashboard() {
   const navigate = useNavigate();
 
@@ -49,11 +52,11 @@ export default function AdminDashboard() {
   const [showUserDropdown, setShowUserDropdown] = useState(false);
   const fileInputRef = useRef();
 
-  // NEW: users sort state (by name)
+  // users sort state (by name)
   const [usersNameSortAsc, setUsersNameSortAsc] = useState(true);
   const toggleUsersNameSort = () => setUsersNameSortAsc((p) => !p);
 
-  // NEW: stats state for "User Graphs" tab
+  // stats state for "User Graphs" tab
   const [stats, setStats] = useState(null);
   const [loadingStats, setLoadingStats] = useState(false);
   const [statsError, setStatsError] = useState(null);
@@ -259,7 +262,7 @@ export default function AdminDashboard() {
     }
   };
 
-  // NEW: fetch user statistics for graphs tab
+  // fetch user statistics for graphs tab
   const fetchUserStats = async () => {
     setLoadingStats(true);
     setStatsError(null);
@@ -344,11 +347,11 @@ export default function AdminDashboard() {
           <Breadcrumbs 
             items={[
               { label: 'AdminDashboard' }, 
-              { label: menuSel === 'users' ? 'Users' : menuSel === 'models' ? 'Top AI Models' : 'User Graphs' }
+              { label: menuSel === 'users' ? 'Users' : menuSel === 'models' ? 'Top AI Models' : menuSel === 'graphs' ? 'User Graphs' : 'Latest AI News' }
             ]}
           />
           <h2 style={{ marginLeft:"130px"}}>
-            {menuSel === 'users' ? 'Manage Users' : menuSel === 'models' ? 'Top AI Models' : 'User Graphs'}
+            {menuSel === 'users' ? 'Manage Users' : menuSel === 'models' ? 'Top AI Models' : menuSel === 'graphs' ? 'User Graphs' : 'Latest AI News'}
           </h2>
         </div>
         <div
@@ -398,12 +401,18 @@ export default function AdminDashboard() {
           >
             Top AI Models
           </li>
-          {/* NEW: User Graphs tab */}
           <li
             className={`sidebar-item ${menuSel === 'graphs' ? 'active' : ''}`}
             onClick={() => setMenuSel('graphs')}
           >
             User Graphs
+          </li>
+          {/* NEW: Latest AI News tab */}
+          <li
+            className={`sidebar-item ${menuSel === 'news' ? 'active' : ''}`}
+            onClick={() => setMenuSel('news')}
+          >
+            Latest AI News
           </li>
         </ul>
       </div>
@@ -637,7 +646,7 @@ export default function AdminDashboard() {
               )}
             </div>
           </>
-        ) : (
+        ) : menuSel === 'graphs' ? (
           // ---------- User Graphs tab ----------
           <div className="graphs-container">
             {loadingStats ? (
@@ -691,6 +700,11 @@ export default function AdminDashboard() {
                 </div>
               </>
             )}
+          </div>
+        ) : (
+          // ---------- Latest AI News tab ----------
+          <div className="news-container">
+            <AINews />
           </div>
         )}
       </div>
